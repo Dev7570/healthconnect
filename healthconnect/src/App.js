@@ -1,3 +1,12 @@
+/**
+ * ============================================
+ *  HealthConnect — Frontend Application
+ * ============================================
+ *  Tech: React 18 + Leaflet Maps + Firebase Auth
+ *  Features: Hospital search, doctor booking,
+ *            dark mode, doctor profiles, payments
+ * ============================================
+ */
 import { useState, useEffect, useCallback } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -147,6 +156,7 @@ function BookingModal({doctor,hospital,user,onClose,onBooked}){
   const [slot,setSlot]=useState(null);
   const [name,setName]=useState(user?.displayName||"");
   const [age,setAge]=useState("");
+  const [phone,setPhone]=useState("");
   const [reason,setReason]=useState("");
   const [done,setDone]=useState(false);
   const [bookingId,setBookingId]=useState("");
@@ -176,7 +186,7 @@ function BookingModal({doctor,hospital,user,onClose,onBooked}){
         body: JSON.stringify({
           doctorName: doctor.name, doctorSpec: doctor.spec, hospitalName: hospital.name,
           hospitalId: hospital.id, date, time: slot, patientName: name,
-          patientAge: age, patientEmail: user?.email, reason, fee: doctor.fee,
+          patientAge: age, patientEmail: user?.email, patientPhone: phone, reason, fee: doctor.fee,
         }),
       });
       const data = await res.json();
@@ -238,14 +248,14 @@ function BookingModal({doctor,hospital,user,onClose,onBooked}){
               </div>}
               {step===2&&<div>
                 <div style={{fontWeight:600,marginBottom:16}}>Patient Information</div>
-                {[["Full Name",name,setName,"text"],["Age",age,setAge,"number"]].map(([l,v,set,t])=><div key={l} style={{marginBottom:14}}><label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>{l}</label><input type={t} value={v} onChange={e=>set(e.target.value)} placeholder={l} style={inp2}/></div>)}
+                {[["Full Name",name,setName,"text"],["Age",age,setAge,"number"],["Phone Number",phone,setPhone,"tel"]].map(([l,v,set,t])=><div key={l} style={{marginBottom:14}}><label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>{l}{l==="Phone Number"&&<span style={{fontSize:11,color:"#9CA3AF",marginLeft:6}}>📱 for SMS confirmation</span>}</label><input type={t} value={v} onChange={e=>set(e.target.value)} placeholder={l==="Phone Number"?"+91 XXXXX XXXXX":l} style={inp2}/></div>)}
                 <div style={{marginBottom:20}}><label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>Reason for Visit</label><textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder="Describe symptoms..." style={{...inp2,resize:"vertical",minHeight:80}}/></div>
                 <div style={{display:"flex",gap:10}}><button onClick={()=>setStep(1)} style={btn({flex:1,border:"2px solid #E5E7EB",background:"white",color:"#374151"})}>← Back</button><button onClick={()=>name&&setStep(3)} style={btn({flex:2,background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white"})}>Review →</button></div>
               </div>}
               {step===3&&<div>
                 <div style={{background:"#F8FAFC",borderRadius:14,padding:18,marginBottom:20}}>
                   <div style={{fontWeight:700,marginBottom:12,color:"#0F4C81"}}>Appointment Summary</div>
-                  {[["Doctor",doctor.name],["Speciality",doctor.spec],["Hospital",hospital.name],["Date",date],["Time",slot],["Patient",name],["Email",user?.email],["Fee",`₹${doctor.fee}`]].map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:8,fontSize:13}}><span style={{color:"#6B7280"}}>{k}</span><span style={{fontWeight:600}}>{v}</span></div>)}
+                  {[["Doctor",doctor.name],["Speciality",doctor.spec],["Hospital",hospital.name],["Date",date],["Time",slot],["Patient",name],["Phone",phone||"N/A"],["Email",user?.email],["Fee",`₹${doctor.fee}`]].map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:8,fontSize:13}}><span style={{color:"#6B7280"}}>{k}</span><span style={{fontWeight:600}}>{v}</span></div>)}
                 </div>
                 <div style={{display:"flex",gap:10}}><button onClick={()=>setStep(2)} style={btn({flex:1,border:"2px solid #E5E7EB",background:"white",color:"#374151"})}>← Back</button><button onClick={confirmBooking} disabled={saving} style={btn({flex:2,background:saving?"#94A3B8":"linear-gradient(135deg,#059669,#10B981)",color:"white"})}>{saving?"Booking...":"Proceed to Pay ₹"+doctor.fee+" →"}</button></div>
               </div>}
@@ -310,7 +320,8 @@ function BookingModal({doctor,hospital,user,onClose,onBooked}){
             <div style={{textAlign:"center",padding:"12px 0"}}>
               <div style={{fontSize:56,marginBottom:12}}>🎉</div>
               <div style={{fontSize:22,fontWeight:800,color:"#059669",marginBottom:6}}>Payment Successful!</div>
-              <div style={{fontSize:14,color:"#6B7280",marginBottom:16}}>Your appointment is confirmed and paid.</div>
+              <div style={{fontSize:14,color:"#6B7280",marginBottom:8}}>Your appointment is confirmed and paid.</div>
+              {phone&&<div style={{background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#15803D",fontWeight:600,marginBottom:16}}>📱 SMS confirmation sent to {phone}</div>}
 
               <div style={{background:"#F8FAFC",borderRadius:14,padding:18,textAlign:"left",marginBottom:20}}>
                 <div style={{fontWeight:700,marginBottom:12,color:"#0F4C81",fontSize:15}}>🧾 Payment Receipt</div>
@@ -344,6 +355,13 @@ export default function App(){
   const [reviewRating,setReviewRating]=useState(5);
   const [searchInput,setSearchInput]=useState("");
   const [notif,setNotif]=useState(null);
+
+  // 🌙 Dark Mode
+  const [darkMode,setDarkMode]=useState(()=>localStorage.getItem("hc_darkMode")==="true");
+  useEffect(()=>{localStorage.setItem("hc_darkMode",darkMode);},[darkMode]);
+
+  // 👨‍⚕️ Doctor Profile
+  const [selectedDoctor,setSelectedDoctor]=useState(null);
 
   // 🆕 NEW STATE — Appointments, Reviews from backend
   const [myAppointments,setMyAppointments]=useState([]);
@@ -462,14 +480,14 @@ export default function App(){
     return ms&&mf;
   }).sort((a,b)=>sortBy==="rating"?b.rating-a.rating:b.reviews-a.reviews);
 
-  const go = async (v, h = null) => {
+  const go = async (v, h = null, doc = null) => {
     setView(v);
     if (h) {
-      // Fetch doctors from backend when opening hospital detail
       const docs = await fetchDoctors(h.id);
       if (docs) h = { ...h, doctors: docs };
       setSelectedHospital(h);
     }
+    if (doc) setSelectedDoctor(doc);
     if (v === "detail" && h) fetchReviews(h.id);
     if (v === "appointments") fetchMyAppointments();
   };
@@ -487,25 +505,37 @@ export default function App(){
     } catch (err) { notifShow("Could not cancel. Try again."); }
   };
 
-  const card={background:"white",borderRadius:16,boxShadow:"0 2px 12px rgba(0,0,0,0.06)",overflow:"hidden",transition:"transform 0.2s,box-shadow 0.2s",cursor:"pointer"};
-  const btn=(e={})=>({padding:"10px 20px",borderRadius:10,border:"none",fontWeight:700,cursor:"pointer",fontSize:14,...e});
-  const inp={padding:"12px 16px",borderRadius:10,border:"2px solid #E5E7EB",fontSize:14,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"};
+  // 🎨 Dark mode theme
+  const dm = darkMode;
+  const theme = {
+    bg: dm?"#0F172A":"#F1F5F9", text: dm?"#F1F5F9":"#111827",
+    card: dm?"#1E293B":"white", cardBorder: dm?"#334155":"#E5E7EB",
+    muted: dm?"#94A3B8":"#6B7280", subtle: dm?"#1E293B":"#F8FAFC",
+    navBg: dm?"linear-gradient(135deg,#0F172A,#1E293B)":"linear-gradient(135deg,#0F4C81,#1565C0)",
+    inputBorder: dm?"#475569":"#E5E7EB", inputBg: dm?"#1E293B":"white",
+  };
 
-  if(authLoading) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",fontSize:20,fontWeight:700,color:"#0F4C81"}}>🩺 Loading HealthConnect...</div>;
+  const card={background:theme.card,borderRadius:16,boxShadow:dm?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)",overflow:"hidden",transition:"transform 0.2s,box-shadow 0.2s",cursor:"pointer",color:theme.text};
+  const btn=(e={})=>({padding:"10px 20px",borderRadius:10,border:"none",fontWeight:700,cursor:"pointer",fontSize:14,...e});
+  const inp={padding:"12px 16px",borderRadius:10,border:`2px solid ${theme.inputBorder}`,fontSize:14,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box",background:theme.inputBg,color:theme.text};
+
+  if(authLoading) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",fontSize:20,fontWeight:700,color:"#0F4C81",background:theme.bg}}>🩺 Loading HealthConnect...</div>;
   if(showAuth) return <AuthPage onSuccess={()=>setShowAuth(false)}/>;
 
   return(
-    <div style={{fontFamily:"'Nunito','Segoe UI',sans-serif",minHeight:"100vh",background:"#F1F5F9",color:"#111827"}}>
+    <div style={{fontFamily:"'Nunito','Segoe UI',sans-serif",minHeight:"100vh",background:theme.bg,color:theme.text,transition:"background 0.3s,color 0.3s"}}>
       <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
       {notif&&<div className="anim-notif" style={{position:"fixed",top:20,right:20,background:"linear-gradient(135deg,#065F46,#059669)",color:"white",padding:"14px 22px",borderRadius:14,zIndex:9999,fontWeight:700,fontSize:14,boxShadow:"0 10px 30px rgba(5,150,105,0.4)"}}>✓ {notif}</div>}
       {bookingDoctor&&selectedHospital&&<BookingModal doctor={bookingDoctor} hospital={selectedHospital} user={user} onClose={()=>setBookingDoctor(null)} onBooked={fetchMyAppointments}/>}
 
       {/* NAVBAR */}
-      <nav style={{background:"linear-gradient(135deg,#0F4C81,#1565C0)",padding:"0 20px",position:"sticky",top:0,zIndex:500,boxShadow:"0 2px 20px rgba(15,76,129,0.4)",animation:"slideDown 0.5s ease-out"}}>
+      <nav style={{background:theme.navBg,padding:"0 20px",position:"sticky",top:0,zIndex:500,boxShadow:dm?"0 2px 20px rgba(0,0,0,0.5)":"0 2px 20px rgba(15,76,129,0.4)",animation:"slideDown 0.5s ease-out"}}>
         <div style={{maxWidth:1100,margin:"0 auto",display:"flex",alignItems:"center",gap:16,height:60}}>
           <div style={{color:"white",fontWeight:900,fontSize:20,cursor:"pointer"}} onClick={()=>go("home")}>🩺 HealthConnect</div>
           <div style={{flex:1}}/>
           {[["Hospitals","list"],["Compare","compare"],["🗺️ Map","map"],["🚨 SOS","emergency"],["💡 Tips","tips"],...(user?[["📋 My Appts","appointments"]]:[])]  .map(([l,v])=><span key={v} className="anim-navlink" onClick={()=>go(v)} style={{color:"white",fontSize:13,cursor:"pointer",fontWeight:600,padding:"6px 10px",borderRadius:8,background:view===v?"rgba(255,255,255,0.2)":"transparent"}}>{l}</span>)}
+          {/* 🌙 Dark Mode Toggle */}
+          <button onClick={()=>setDarkMode(!dm)} style={{background:dm?"rgba(255,255,255,0.15)":"rgba(0,0,0,0.15)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:20,padding:"6px 12px",color:"white",cursor:"pointer",fontSize:16,fontWeight:600,transition:"all 0.3s"}} title={dm?"Switch to Light Mode":"Switch to Dark Mode"}>{dm?"☀️":"🌙"}</button>
           {user ? (
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <div style={{background:"rgba(255,255,255,0.15)",borderRadius:20,padding:"6px 14px",color:"white",fontSize:13,fontWeight:600}}>👤 {user.displayName||user.email}</div>
@@ -541,7 +571,7 @@ export default function App(){
 
             <div style={{display:"flex",gap:12,maxWidth:600}}>
               <div style={{flex:1,position:"relative"}}>
-                <span style={{position:"absolute",left:14,top:cd C:\Users\Dev Gupta\Desktop\project 2"50%",transform:"translateY(-50%)",fontSize:18}}>🔍</span>
+                <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:18}}>🔍</span>
                 <input value={searchInput} onChange={e=>setSearchInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){setSearch(searchInput);go("list");}}} placeholder="Search hospital by name..." style={{...inp,paddingLeft:44,borderColor:"transparent",background:"rgba(255,255,255,0.95)",borderRadius:12,fontSize:15}}/>
               </div>
               <button onClick={()=>{setSearch(searchInput);go("list");}} style={btn({background:"white",color:"#0F4C81",fontSize:15,padding:"12px 28px",borderRadius:12})}>Search</button>
@@ -554,7 +584,7 @@ export default function App(){
 
           {/* Stats */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:32}}>
-            {[[hospitals.length||"20+","Hospitals Found","#EFF6FF","#1E88E5"],["9","Doctors Available","#F0FDF4","#10B981"],["6","Tests to Compare","#FFFBEB","#F59E0B"],["24/7","Emergency Support","#FFF1F2","#EF4444"]].map(([v,l,bg,c])=><div key={l} className="anim-stat" style={{background:bg,borderRadius:14,padding:20,textAlign:"center"}}><div style={{fontSize:28,fontWeight:900,color:c}}>{v}</div><div style={{fontSize:12,color:"#6B7280",fontWeight:600,marginTop:4}}>{l}</div></div>)}
+            {[[hospitals.length||"20+","Hospitals Found",dm?"#1E293B":"#EFF6FF","#1E88E5"],["9","Doctors Available",dm?"#1E293B":"#F0FDF4","#10B981"],["6","Tests to Compare",dm?"#1E293B":"#FFFBEB","#F59E0B"],["24/7","Emergency Support",dm?"#1E293B":"#FFF1F2","#EF4444"]].map(([v,l,bg,c])=><div key={l} className="anim-stat" style={{background:bg,borderRadius:14,padding:20,textAlign:"center"}}><div style={{fontSize:28,fontWeight:900,color:c}}>{v}</div><div style={{fontSize:12,color:theme.muted,fontWeight:600,marginTop:4}}>{l}</div></div>)}
           </div>
 
           {!user&&<div style={{background:"linear-gradient(135deg,#0F4C81,#1565C0)",borderRadius:16,padding:"24px 28px",color:"white",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
@@ -602,10 +632,10 @@ export default function App(){
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
             <h2 style={{margin:0,fontWeight:800,fontSize:22}}>Hospitals in {cityInput} <span style={{fontSize:14,color:"#6B7280",fontWeight:500}}>({hospitals.length} found)</span></h2>
           </div>
-          <div style={{background:"white",borderRadius:14,padding:18,marginBottom:20,boxShadow:"0 2px 8px rgba(0,0,0,0.05)",display:"flex",gap:14,flexWrap:"wrap",alignItems:"center"}}>
+          <div style={{background:theme.card,borderRadius:14,padding:18,marginBottom:20,boxShadow:dm?"0 2px 8px rgba(0,0,0,0.3)":"0 2px 8px rgba(0,0,0,0.05)",display:"flex",gap:14,flexWrap:"wrap",alignItems:"center"}}>
             <div style={{flex:1,minWidth:200,position:"relative"}}><span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)"}}>🔍</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search hospitals..." style={{...inp,paddingLeft:36}}/></div>
-            <select value={specFilter} onChange={e=>setSpecFilter(e.target.value)} style={{padding:"12px 16px",borderRadius:10,border:"2px solid #E5E7EB",fontSize:14,background:"white",cursor:"pointer",fontFamily:"inherit"}}>{SPECIALITIES.map(sp=><option key={sp}>{sp}</option>)}</select>
-            <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{padding:"12px 16px",borderRadius:10,border:"2px solid #E5E7EB",fontSize:14,background:"white",cursor:"pointer",fontFamily:"inherit"}}><option value="rating">Sort: Best Rated</option><option value="reviews">Sort: Most Reviewed</option></select>
+            <select value={specFilter} onChange={e=>setSpecFilter(e.target.value)} style={{padding:"12px 16px",borderRadius:10,border:`2px solid ${theme.inputBorder}`,fontSize:14,background:theme.inputBg,color:theme.text,cursor:"pointer",fontFamily:"inherit"}}>{SPECIALITIES.map(sp=><option key={sp}>{sp}</option>)}</select>
+            <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{padding:"12px 16px",borderRadius:10,border:`2px solid ${theme.inputBorder}`,fontSize:14,background:theme.inputBg,color:theme.text,cursor:"pointer",fontFamily:"inherit"}}><option value="rating">Sort: Best Rated</option><option value="reviews">Sort: Most Reviewed</option></select>
           </div>
 
           {loadingHospitals&&<div style={{textAlign:"center",padding:"60px",background:"white",borderRadius:16}}><div className="anim-spinner"></div><div style={{fontWeight:700,color:"#0F4C81",marginTop:8}}>Loading real hospitals...</div></div>}
@@ -659,10 +689,10 @@ export default function App(){
           {activeTab==="doctors"&&<div>
             {selectedHospital.doctors.map(doc=><div key={doc.id} style={{...card,cursor:"default",marginBottom:14}}>
               <div style={{padding:"18px 22px",display:"flex",gap:16,alignItems:"center"}}>
-                <div style={{width:54,height:54,borderRadius:"50%",background:`${selectedHospital.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}}>👨‍⚕️</div>
-                <div style={{flex:1}}><div style={{fontWeight:800,fontSize:16,marginBottom:3}}>{doc.name}</div><div style={{display:"flex",gap:8,marginBottom:6,flexWrap:"wrap"}}><Badge color={`${selectedHospital.color}14`} text={selectedHospital.color}>{doc.spec}</Badge><Badge color="#FFFBEB" text="#92400E">Available: {doc.available}</Badge></div><Star rating={doc.rating}/></div>
+                <div onClick={()=>go("doctorProfile",null,doc)} style={{width:54,height:54,borderRadius:"50%",background:`${selectedHospital.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0,cursor:"pointer",transition:"transform 0.2s"}} onMouseEnter={e=>e.currentTarget.style.transform="scale(1.1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>👨‍⚕️</div>
+                <div style={{flex:1}}><div onClick={()=>go("doctorProfile",null,doc)} style={{fontWeight:800,fontSize:16,marginBottom:3,cursor:"pointer",color:"#1E88E5"}}>{doc.name}</div><div style={{display:"flex",gap:8,marginBottom:6,flexWrap:"wrap"}}><Badge color={`${selectedHospital.color}14`} text={selectedHospital.color}>{doc.spec}</Badge><Badge color="#FFFBEB" text="#92400E">Available: {doc.available}</Badge></div><Star rating={doc.rating}/></div>
                 <div style={{textAlign:"right",flexShrink:0}}>
-                  <div style={{fontSize:22,fontWeight:900,color:"#0F4C81",marginBottom:4}}>₹{doc.fee}</div>
+                  <div style={{fontSize:22,fontWeight:900,color:dm?"#60A5FA":"#0F4C81",marginBottom:4}}>₹{doc.fee}</div>
                   <button onClick={()=>handleBookClick(doc)} style={btn({background:`linear-gradient(135deg,${selectedHospital.color},${selectedHospital.color}BB)`,color:"white",padding:"10px 20px"})}>{user?"Book Appointment":"🔐 Login to Book"}</button>
                 </div>
               </div>
@@ -861,10 +891,56 @@ export default function App(){
           </div>
         </div>}
 
+        {/* =========== 🆕 DOCTOR PROFILE =========== */}
+        {view==="doctorProfile"&&selectedDoctor&&<div>
+          <button onClick={()=>go(selectedHospital?"detail":"list")} style={btn({background:theme.card,color:theme.text,border:`2px solid ${theme.cardBorder}`,marginBottom:20})}>← Back</button>
+          <div style={{background:"linear-gradient(135deg,#0F4C81,#1565C0,#42A5F5)",borderRadius:20,padding:"40px 36px",color:"white",marginBottom:24,position:"relative",overflow:"hidden"}}>
+            <div className="anim-float" style={{position:"absolute",right:30,top:-10,fontSize:100,opacity:0.08}}>👨‍⚕️</div>
+            <div style={{display:"flex",gap:24,alignItems:"center"}}>
+              <div style={{width:90,height:90,borderRadius:"50%",background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:48,flexShrink:0,border:"3px solid rgba(255,255,255,0.4)"}}>👨‍⚕️</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:28,fontWeight:900,marginBottom:6}}>{selectedDoctor.name}</div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:8}}>
+                  <span style={{background:"rgba(255,255,255,0.2)",padding:"4px 14px",borderRadius:20,fontSize:13,fontWeight:600}}>{selectedDoctor.spec}</span>
+                  <span style={{background:"rgba(255,255,255,0.2)",padding:"4px 14px",borderRadius:20,fontSize:13,fontWeight:600}}>{selectedDoctor.exp} yrs exp</span>
+                  <span style={{background:"rgba(255,255,255,0.2)",padding:"4px 14px",borderRadius:20,fontSize:13,fontWeight:600}}>Available: {selectedDoctor.available}</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}><Star rating={selectedDoctor.rating} size={18}/><span style={{fontWeight:700,fontSize:16}}>{selectedDoctor.rating}/5</span></div>
+              </div>
+              <div style={{textAlign:"right",flexShrink:0}}>
+                <div style={{fontSize:36,fontWeight:900}}>₹{selectedDoctor.fee}</div>
+                <div style={{fontSize:13,opacity:0.8}}>Consultation Fee</div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16,marginBottom:24}}>
+            {[["🎓 Experience",`${selectedDoctor.exp} Years`,"#EFF6FF","#1E88E5"],["⭐ Rating",`${selectedDoctor.rating}/5`,"#FFFBEB","#F59E0B"],["💰 Fee",`₹${selectedDoctor.fee}`,"#F0FDF4","#10B981"]].map(([t,v,bg,c])=><div key={t} style={{background:dm?"#1E293B":bg,borderRadius:14,padding:20,textAlign:"center"}}><div style={{fontSize:13,color:theme.muted,fontWeight:600,marginBottom:6}}>{t}</div><div style={{fontSize:24,fontWeight:900,color:c}}>{v}</div></div>)}
+          </div>
+
+          <div style={{background:theme.card,borderRadius:16,padding:24,marginBottom:20,boxShadow:dm?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)"}}>
+            <div style={{fontWeight:800,fontSize:18,marginBottom:4,color:dm?"#60A5FA":"#0F4C81"}}>About</div>
+            <div style={{fontSize:14,color:theme.muted,lineHeight:1.8,marginBottom:16}}>{selectedDoctor.bio||"Highly experienced medical professional dedicated to providing the best patient care."}</div>
+            <div style={{fontWeight:700,fontSize:14,marginBottom:8,color:theme.text}}>📜 Qualifications</div>
+            <div style={{fontSize:14,color:theme.muted,marginBottom:16}}>{selectedDoctor.qualifications||"MBBS, MD"}</div>
+            <div style={{fontWeight:700,fontSize:14,marginBottom:8,color:theme.text}}>🕐 Available Slots</div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {(selectedDoctor.slots||TIME_SLOTS.slice(0,5)).map(s=><span key={s} style={{background:dm?"#334155":"#EFF6FF",color:dm?"#60A5FA":"#1E88E5",padding:"6px 14px",borderRadius:10,fontSize:13,fontWeight:600}}>{s}</span>)}
+            </div>
+          </div>
+
+          {selectedHospital&&<div style={{background:theme.card,borderRadius:16,padding:20,marginBottom:20,boxShadow:dm?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style={{fontWeight:700,fontSize:14,marginBottom:4}}>🏥 {selectedHospital.name}</div><div style={{fontSize:13,color:theme.muted}}>{selectedHospital.address}</div></div>
+            <button onClick={()=>handleBookClick(selectedDoctor)} style={btn({background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white",padding:"12px 28px",fontSize:15})}>{user?"Book Appointment →":"🔐 Login to Book"}</button>
+          </div>}
+
+          {!selectedHospital&&<button onClick={()=>handleBookClick(selectedDoctor)} style={btn({background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white",padding:"14px 32px",fontSize:16,width:"100%",borderRadius:14})}>{user?"Book Appointment →":"🔐 Login to Book"}</button>}
+        </div>}
+
       </div>
 
       {/* =========== 🆕 FOOTER =========== */}
-      <footer className="anim-footer" style={{background:"linear-gradient(135deg,#0F4C81,#0A2E4E)",color:"white",padding:"48px 20px 24px",marginTop:40}}>
+      <footer className="anim-footer" style={{background:dm?"linear-gradient(135deg,#0F172A,#1E293B)":"linear-gradient(135deg,#0F4C81,#0A2E4E)",color:"white",padding:"48px 20px 24px",marginTop:40}}>
         <div style={{maxWidth:1100,margin:"0 auto"}}>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:32,marginBottom:32}}>
             <div>

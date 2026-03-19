@@ -159,7 +159,7 @@ project 2/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/healthconnect.git
+git clone https://github.com/Dev7570/healthconnect.git
 cd healthconnect
 ```
 

@@ -541,7 +541,7 @@ export default function App(){
 
             <div style={{display:"flex",gap:12,maxWidth:600}}>
               <div style={{flex:1,position:"relative"}}>
-                <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:18}}>🔍</span>
+                <span style={{position:"absolute",left:14,top:cd C:\Users\Dev Gupta\Desktop\project 2"50%",transform:"translateY(-50%)",fontSize:18}}>🔍</span>
                 <input value={searchInput} onChange={e=>setSearchInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){setSearch(searchInput);go("list");}}} placeholder="Search hospital by name..." style={{...inp,paddingLeft:44,borderColor:"transparent",background:"rgba(255,255,255,0.95)",borderRadius:12,fontSize:15}}/>
               </div>
               <button onClick={()=>{setSearch(searchInput);go("list");}} style={btn({background:"white",color:"#0F4C81",fontSize:15,padding:"12px 28px",borderRadius:12})}>Search</button>

@@ -395,15 +395,17 @@ export default function App(){
   const [loadingHospitals, setLoadingHospitals] = useState(false);
   const [apiError, setApiError] = useState(null);
 
-  // ✅ Fetch real hospitals from backend
+  // ✅ Fetch real hospitals from backend (with timeout for Render cold starts)
   const fetchHospitals = async (city = "New Delhi") => {
     setLoadingHospitals(true);
     setApiError(null);
     try {
-      const res = await fetch(`${API_URL}/hospitals?city=${encodeURIComponent(city)}`);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout for cold start
+      const res = await fetch(`${API_URL}/hospitals?city=${encodeURIComponent(city)}`, { signal: controller.signal });
+      clearTimeout(timeout);
       const data = await res.json();
       if(data.success && data.hospitals.length > 0){
-        // Add colors and enrich data
         const enriched = data.hospitals.map((h, i) => ({
           ...h,
           color: COLORS[i % COLORS.length],
@@ -418,7 +420,11 @@ export default function App(){
         setApiError("No hospitals found for this city.");
       }
     } catch(err) {
-      setApiError("Could not connect to backend. Make sure server is running on port 5000.");
+      if(err.name === "AbortError") {
+        setApiError("⏳ Server is waking up (free tier cold start). Please click Retry — it should work now!");
+      } else {
+        setApiError("Could not connect to backend. The server may be starting up — please try again in 30 seconds.");
+      }
     }
     setLoadingHospitals(false);
   };
@@ -499,14 +505,15 @@ export default function App(){
     return ms&&mf;
   }).sort((a,b)=>sortBy==="rating"?b.rating-a.rating:b.reviews-a.reviews);
 
-  // 🆕 Fetch all doctors (for standalone page)
+  // 🆕 Fetch all doctors (for standalone page) — with timeout + fallback
   const fetchAllDoctors = async () => {
     setLoadingAllDocs(true);
     try {
-      // Fetch doctors for multiple hospital IDs to get variety
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
       const allDocs = [];
       for (let hid = 1; hid <= 3; hid++) {
-        const res = await fetch(`${API_URL}/doctors?hospitalId=${hid}`);
+        const res = await fetch(`${API_URL}/doctors?hospitalId=${hid}`, { signal: controller.signal });
         const data = await res.json();
         if (data.success) {
           data.doctors.forEach(d => {
@@ -514,8 +521,10 @@ export default function App(){
           });
         }
       }
+      clearTimeout(timeout);
       setAllDoctors(allDocs.length > 0 ? allDocs : DOCTORS_DB_FALLBACK);
     } catch {
+      // On timeout or error, show fallback doctors immediately
       setAllDoctors(DOCTORS_DB_FALLBACK);
     }
     setLoadingAllDocs(false);
@@ -640,7 +649,7 @@ export default function App(){
             <div style={{fontWeight:700,color:"#0F4C81",marginTop:8}}>Fetching real hospitals from Google...</div>
           </div>}
 
-          {apiError&&<div style={{background:"#FFF1F2",border:"1px solid #FECDD3",borderRadius:14,padding:"16px 20px",marginBottom:24,color:"#BE123C",fontWeight:600}}>⚠️ {apiError}</div>}
+          {apiError&&<div style={{background:"#FFF1F2",border:"1px solid #FECDD3",borderRadius:14,padding:"16px 20px",marginBottom:24,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{color:"#BE123C",fontWeight:600}}>⚠️ {apiError}</span><button onClick={()=>fetchHospitals(cityInput)} style={{background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white",border:"none",borderRadius:10,padding:"8px 20px",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0,marginLeft:12}}>🔄 Retry</button></div>}
 
           {/* Featured Hospitals */}
           {!loadingHospitals&&hospitals.length>0&&<>

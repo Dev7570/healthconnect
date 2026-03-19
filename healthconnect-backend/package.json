@@ -8,7 +8,14 @@
     "dev": "node --watch server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["healthcare", "hospital", "appointment", "nodejs", "express", "mongodb"],
+  "keywords": [
+    "healthcare",
+    "hospital",
+    "appointment",
+    "nodejs",
+    "express",
+    "mongodb"
+  ],
   "author": "Dev Gupta",
   "license": "ISC",
   "type": "commonjs",

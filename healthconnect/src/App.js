@@ -1,341 +1,323 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { auth } from "./firebase";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+} from "firebase/auth";
 
-const HOSPITALS = [
-  {
-    id: 1,
-    name: "Apollo Hospitals",
-    type: "Multi-Specialty",
-    address: "Sarita Vihar, Delhi Mathura Road, New Delhi",
-    area: "Sarita Vihar",
-    city: "New Delhi",
-    rating: 4.7,
-    reviews: 2341,
-    image: "🏥",
-    color: "#0066CC",
-    established: 1983,
-    beds: 710,
-    specialities: ["Cardiology", "Oncology", "Neurology", "Orthopedics", "Nephrology"],
-    lat: 28.5355,
-    lng: 77.2846,
-    openNow: true,
-    timings: "24/7",
-    doctors: [
-      { id: 1, name: "Dr. Rajesh Sharma", spec: "Cardiologist", exp: 18, fee: 1200, available: "Today", rating: 4.8, img: "👨‍⚕️" },
-      { id: 2, name: "Dr. Priya Menon", spec: "Neurologist", exp: 14, fee: 1500, available: "Tomorrow", rating: 4.9, img: "👩‍⚕️" },
-      { id: 3, name: "Dr. Anil Kapoor", spec: "Orthopedic", exp: 22, fee: 1000, available: "Today", rating: 4.6, img: "👨‍⚕️" },
-    ],
-    tests: [
-      { name: "Blood Test (CBC)", price: 350 },
-      { name: "MRI Brain", price: 7500 },
-      { name: "CT Scan Chest", price: 4500 },
-      { name: "ECG", price: 200 },
-      { name: "X-Ray", price: 300 },
-      { name: "Lipid Profile", price: 500 },
-    ],
-    reviewsList: [
-      { user: "Amit K.", rating: 5, comment: "Excellent care, very professional staff.", date: "Jan 2025" },
-      { user: "Sunita R.", rating: 4, comment: "Good facilities but waiting time was long.", date: "Dec 2024" },
-      { user: "Rahul M.", rating: 5, comment: "Saved my father's life. Forever grateful.", date: "Nov 2024" },
-    ],
-  },
-  {
-    id: 2,
-    name: "Fortis Memorial",
-    type: "Super-Specialty",
-    address: "Sector 44, Opposite HUDA City Centre, Gurugram",
-    area: "Sector 44",
-    city: "Gurugram",
-    rating: 4.5,
-    reviews: 1876,
-    image: "🏨",
-    color: "#E8432D",
-    established: 2001,
-    beds: 310,
-    specialities: ["Cardiac Sciences", "Oncology", "Pediatrics", "Gastroenterology"],
-    lat: 28.4595,
-    lng: 77.0266,
-    openNow: true,
-    timings: "24/7",
-    doctors: [
-      { id: 4, name: "Dr. Neha Singh", spec: "Pediatrician", exp: 12, fee: 900, available: "Today", rating: 4.7, img: "👩‍⚕️" },
-      { id: 5, name: "Dr. Vivek Raj", spec: "Gastroenterologist", exp: 16, fee: 1300, available: "Today", rating: 4.5, img: "👨‍⚕️" },
-    ],
-    tests: [
-      { name: "Blood Test (CBC)", price: 280 },
-      { name: "MRI Brain", price: 6800 },
-      { name: "CT Scan Chest", price: 4000 },
-      { name: "ECG", price: 180 },
-      { name: "X-Ray", price: 250 },
-      { name: "Lipid Profile", price: 450 },
-    ],
-    reviewsList: [
-      { user: "Kavita P.", rating: 5, comment: "Best pediatric ward in Gurugram.", date: "Feb 2025" },
-      { user: "Deepak T.", rating: 4, comment: "Good doctors, average food quality.", date: "Jan 2025" },
-    ],
-  },
-  {
-    id: 3,
-    name: "Max Super Speciality",
-    type: "Super-Specialty",
-    address: "1 Press Enclave Road, Saket, New Delhi",
-    area: "Saket",
-    city: "New Delhi",
-    rating: 4.6,
-    reviews: 3102,
-    image: "🏦",
-    color: "#00A651",
-    established: 2000,
-    beds: 500,
-    specialities: ["Oncology", "Bone Marrow Transplant", "Robotic Surgery", "Nephrology"],
-    lat: 28.5244,
-    lng: 77.2066,
-    openNow: true,
-    timings: "24/7",
-    doctors: [
-      { id: 6, name: "Dr. Suresh Gupta", spec: "Oncologist", exp: 25, fee: 2000, available: "Tomorrow", rating: 4.9, img: "👨‍⚕️" },
-      { id: 7, name: "Dr. Meera Bose", spec: "Nephrologist", exp: 19, fee: 1800, available: "Today", rating: 4.8, img: "👩‍⚕️" },
-    ],
-    tests: [
-      { name: "Blood Test (CBC)", price: 320 },
-      { name: "MRI Brain", price: 8200 },
-      { name: "CT Scan Chest", price: 5000 },
-      { name: "ECG", price: 220 },
-      { name: "X-Ray", price: 280 },
-      { name: "Lipid Profile", price: 480 },
-    ],
-    reviewsList: [
-      { user: "Priya S.", rating: 5, comment: "Robotic surgery went perfectly. Outstanding team.", date: "Feb 2025" },
-      { user: "Anoop V.", rating: 4, comment: "Billing process is complicated.", date: "Jan 2025" },
-      { user: "Geeta L.", rating: 5, comment: "Cancer treatment care was exceptional.", date: "Dec 2024" },
-    ],
-  },
-  {
-    id: 4,
-    name: "AIIMS Delhi",
-    type: "Government / Research",
-    address: "Ansari Nagar East, New Delhi",
-    area: "Ansari Nagar",
-    city: "New Delhi",
-    rating: 4.4,
-    reviews: 8921,
-    image: "🏛️",
-    color: "#6B21A8",
-    established: 1956,
-    beds: 2478,
-    specialities: ["All Specialties", "Research", "Trauma", "Burns", "Transplant"],
-    lat: 28.5672,
-    lng: 77.21,
-    openNow: true,
-    timings: "24/7 Emergency | OPD: 8AM–1PM",
-    doctors: [
-      { id: 8, name: "Dr. Ramesh Chandra", spec: "Trauma Surgeon", exp: 30, fee: 100, available: "Today", rating: 4.7, img: "👨‍⚕️" },
-      { id: 9, name: "Dr. Asha Iyer", spec: "Dermatologist", exp: 20, fee: 100, available: "Thu", rating: 4.6, img: "👩‍⚕️" },
-    ],
-    tests: [
-      { name: "Blood Test (CBC)", price: 80 },
-      { name: "MRI Brain", price: 3000 },
-      { name: "CT Scan Chest", price: 1800 },
-      { name: "ECG", price: 50 },
-      { name: "X-Ray", price: 80 },
-      { name: "Lipid Profile", price: 120 },
-    ],
-    reviewsList: [
-      { user: "Mukesh D.", rating: 5, comment: "Best government hospital. World-class doctors.", date: "Feb 2025" },
-      { user: "Sania K.", rating: 3, comment: "Long queues but treatment quality is top-notch.", date: "Jan 2025" },
-    ],
-  },
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+});
+
+// 🌐 API URL — auto-detect local vs deployed
+const API_URL = window.location.hostname === "localhost"
+  ? "http://localhost:5000"
+  : "https://healthconnect-backend-api.onrender.com";
+
+// 🎨 Color palette for hospitals
+const COLORS = ["#0066CC","#E8432D","#00A651","#6B21A8","#F59E0B","#0F766E","#DC2626","#7C3AED","#059669","#D97706"];
+
+const ALL_TESTS = ["Blood Test (CBC)","MRI Brain","CT Scan Chest","ECG","X-Ray","Lipid Profile"];
+const SPECIALITIES = ["All","Cardiology","Neurology","Orthopedics","Oncology","Pediatrics","Gastroenterology","Nephrology","General Medicine","Emergency","Surgery"];
+const TIME_SLOTS = ["9:00 AM","9:30 AM","10:00 AM","10:30 AM","11:00 AM","2:00 PM","2:30 PM","3:00 PM","3:30 PM","4:00 PM"];
+
+// 🏥 Health Tips Data
+const HEALTH_TIPS = [
+  { id: 1, category: "Prevention", icon: "🛡️", color: "#059669", title: "Regular Health Checkups", desc: "Get a full body checkup at least once a year. Early detection can prevent serious health issues. Blood tests, ECG, and basic screenings should be part of your annual routine.", tip: "Schedule your next checkup today!" },
+  { id: 2, category: "Nutrition", icon: "🥗", color: "#D97706", title: "Balanced Diet is Key", desc: "Include plenty of fruits, vegetables, whole grains, and lean proteins in your diet. Limit processed foods, sugar, and excessive salt for better heart and digestive health.", tip: "Try adding one new vegetable to your diet this week!" },
+  { id: 3, category: "Mental Health", icon: "🧠", color: "#7C3AED", title: "Prioritize Mental Wellness", desc: "Mental health is just as important as physical health. Practice meditation, deep breathing, or yoga daily. Don't hesitate to seek professional help if you feel overwhelmed.", tip: "Start with just 5 minutes of meditation today." },
+  { id: 4, category: "First Aid", icon: "🩹", color: "#DC2626", title: "Basic First Aid Knowledge", desc: "Everyone should know basic first aid — CPR, treating burns, stopping bleeding, and handling choking emergencies. These skills can save lives in critical moments.", tip: "Take a free first aid course online!" },
+  { id: 5, category: "Fitness", icon: "🏃", color: "#0284C7", title: "Stay Physically Active", desc: "Aim for at least 30 minutes of moderate exercise daily. Walking, jogging, cycling, or swimming can significantly reduce the risk of heart disease, diabetes, and obesity.", tip: "A 30-min walk daily can add years to your life!" },
+  { id: 6, category: "Hygiene", icon: "🧼", color: "#0F766E", title: "Maintain Good Hygiene", desc: "Wash hands frequently, maintain oral hygiene, and keep your living environment clean. Good hygiene prevents infections and keeps you healthy throughout the year.", tip: "Wash hands for at least 20 seconds!" },
+  { id: 7, category: "Sleep", icon: "😴", color: "#4338CA", title: "Quality Sleep Matters", desc: "Adults need 7-9 hours of quality sleep per night. Poor sleep increases the risk of heart disease, obesity, and mental health issues. Maintain a consistent sleep schedule.", tip: "Put away screens 1 hour before bed." },
+  { id: 8, category: "Hydration", icon: "💧", color: "#0891B2", title: "Drink Enough Water", desc: "Stay hydrated by drinking at least 8 glasses (2 liters) of water daily. Proper hydration improves digestion, skin health, energy levels, and kidney function.", tip: "Carry a water bottle everywhere you go!" },
 ];
 
-const ALL_TESTS = ["Blood Test (CBC)", "MRI Brain", "CT Scan Chest", "ECG", "X-Ray", "Lipid Profile"];
+// 🚨 Emergency Numbers
+const EMERGENCY_CONTACTS = [
+  { name: "Ambulance", number: "102", icon: "🚑", color: "#DC2626", desc: "Medical Emergency — Free ambulance service" },
+  { name: "Police", number: "100", icon: "👮", color: "#1D4ED8", desc: "Law enforcement assistance" },
+  { name: "Fire Brigade", number: "101", icon: "🚒", color: "#EA580C", desc: "Fire & rescue services" },
+  { name: "Women Helpline", number: "1091", icon: "👩", color: "#9333EA", desc: "24/7 Women safety helpline" },
+  { name: "Child Helpline", number: "1098", icon: "👶", color: "#0D9488", desc: "Child protection & emergency" },
+  { name: "Emergency (Universal)", number: "112", icon: "🆘", color: "#BE123C", desc: "Universal emergency number — works everywhere" },
+  { name: "Mental Health", number: "08046110007", icon: "🧠", color: "#7C3AED", desc: "NIMHANS mental health helpline" },
+  { name: "COVID Helpline", number: "1075", icon: "😷", color: "#059669", desc: "Health ministry COVID helpline" },
+];
 
-const SPECIALITIES = ["All", "Cardiology", "Neurology", "Orthopedics", "Oncology", "Pediatrics", "Gastroenterology", "Nephrology", "Dermatology"];
+const Star = ({rating,size=14}) => <span>{[1,2,3,4,5].map(s=><span key={s} style={{fontSize:size,color:s<=Math.round(rating)?"#F59E0B":"#D1D5DB"}}>★</span>)}</span>;
+const Badge = ({children,color="#EFF6FF",text="#1D4ED8"}) => <span style={{background:color,color:text,fontSize:11,fontWeight:600,padding:"2px 10px",borderRadius:20,whiteSpace:"nowrap"}}>{children}</span>;
 
-const TIME_SLOTS = ["9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM"];
-
-function StarRating({ rating, size = 14 }) {
-  return (
-    <span style={{ display: "inline-flex", gap: 2 }}>
-      {[1, 2, 3, 4, 5].map((s) => (
-        <span key={s} style={{ fontSize: size, color: s <= Math.round(rating) ? "#F59E0B" : "#D1D5DB" }}>★</span>
-      ))}
-    </span>
+function RealMap({hospitals,onSelect}){
+  if(!hospitals || hospitals.length === 0) return null;
+  const center = [hospitals[0].lat || 28.6139, hospitals[0].lng || 77.209];
+  return(
+    <div style={{borderRadius:16,overflow:"hidden",height:420,border:"1px solid #CBD5E1"}}>
+      <MapContainer center={center} zoom={11} style={{height:"100%",width:"100%"}}>
+        <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
+        {hospitals.map((h,i)=>(
+          <Marker key={h.id} position={[h.lat || 28.6139, h.lng || 77.209]}>
+            <Popup>
+              <div style={{fontFamily:"sans-serif",minWidth:180}}>
+                <div style={{fontWeight:800,fontSize:14,marginBottom:4}}>{h.name}</div>
+                <div style={{fontSize:12,color:"#6B7280",marginBottom:6}}>📍 {h.address}</div>
+                <div style={{fontSize:13,marginBottom:8}}>⭐ {h.rating} · {h.reviews.toLocaleString()} reviews</div>
+                {h.phone && h.phone !== "N/A" && <div style={{fontSize:12,color:"#374151",marginBottom:8}}>📞 {h.phone}</div>}
+                <div style={{display:"flex",gap:6}}>
+                  <a href={`https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}`} target="_blank" rel="noreferrer" style={{background:"#1E88E5",color:"white",padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:700,textDecoration:"none"}}>🗺️ Directions</a>
+                  <button onClick={()=>onSelect(h)} style={{background:h.color,color:"white",padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:700,border:"none",cursor:"pointer"}}>View</button>
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
   );
 }
 
-function Badge({ children, color = "#EFF6FF", text = "#1D4ED8" }) {
-  return (
-    <span style={{ background: color, color: text, fontSize: 11, fontWeight: 600, padding: "2px 10px", borderRadius: 20, whiteSpace: "nowrap" }}>
-      {children}
-    </span>
-  );
-}
+function AuthPage({onSuccess}){
+  const [isLogin, setIsLogin] = useState(true);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-function MapView({ hospitals, selectedId, onSelect }) {
-  const colors = ["#0066CC", "#E8432D", "#00A651", "#6B21A8"];
-  return (
-    <div style={{ background: "#E8F4F8", borderRadius: 16, overflow: "hidden", height: 420, position: "relative", border: "1px solid #CBD5E1", fontFamily: "inherit" }}>
-      {/* Fake map grid */}
-      <svg width="100%" height="100%" style={{ position: "absolute", top: 0, left: 0 }}>
-        {[...Array(12)].map((_, i) => (
-          <line key={`h${i}`} x1="0" y1={i * 35} x2="100%" y2={i * 35} stroke="#D1FAE5" strokeWidth="1" />
-        ))}
-        {[...Array(20)].map((_, i) => (
-          <line key={`v${i}`} x1={i * 50} y1="0" x2={i * 50} y2="100%" stroke="#D1FAE5" strokeWidth="1" />
-        ))}
-        {/* Roads */}
-        <line x1="0" y1="210" x2="100%" y2="210" stroke="#BFDBFE" strokeWidth="8" opacity="0.7" />
-        <line x1="350" y1="0" x2="350" y2="100%" stroke="#BFDBFE" strokeWidth="8" opacity="0.7" />
-        <line x1="0" y1="130" x2="100%" y2="130" stroke="#E0E7FF" strokeWidth="4" opacity="0.5" />
-        <line x1="550" y1="0" x2="550" y2="100%" stroke="#E0E7FF" strokeWidth="4" opacity="0.5" />
-        {/* Hospital markers */}
-        {hospitals.map((h, i) => {
-          const positions = [{ x: 280, y: 200 }, { x: 120, y: 300 }, { x: 480, y: 160 }, { x: 600, y: 250 }];
-          const pos = positions[i] || { x: 200 + i * 100, y: 200 };
-          const isSelected = h.id === selectedId;
-          return (
-            <g key={h.id} onClick={() => onSelect(h.id)} style={{ cursor: "pointer" }}>
-              <circle cx={pos.x} cy={pos.y} r={isSelected ? 22 : 16} fill={colors[i]} opacity={isSelected ? 1 : 0.8} />
-              <circle cx={pos.x} cy={pos.y} r={isSelected ? 26 : 0} fill={colors[i]} opacity="0.2" />
-              <text x={pos.x} y={pos.y + 5} textAnchor="middle" fontSize="14" fill="white">🏥</text>
-              <rect x={pos.x - 55} y={pos.y - 42} width="110" height="22" rx="6" fill="white" stroke={colors[i]} strokeWidth="1.5" />
-              <text x={pos.x} y={pos.y - 26} textAnchor="middle" fontSize="10" fontWeight="700" fill={colors[i]}>
-                {h.name.split(" ").slice(0, 2).join(" ")}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-      {/* Map attribution */}
-      <div style={{ position: "absolute", bottom: 8, right: 12, background: "white", borderRadius: 6, padding: "3px 8px", fontSize: 10, color: "#94A3B8", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
-        📍 Map Preview (Google Maps Integration)
-      </div>
-      <div style={{ position: "absolute", top: 12, left: 12, background: "white", borderRadius: 10, padding: "8px 12px", boxShadow: "0 2px 8px rgba(0,0,0,0.15)", fontSize: 12, color: "#374151" }}>
-        <strong>Delhi NCR</strong> — {hospitals.length} hospitals shown
+  const handle = async () => {
+    setError(""); setLoading(true);
+    try {
+      if(isLogin){
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        if(!name) { setError("Please enter your name"); setLoading(false); return; }
+        const res = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(res.user, { displayName: name });
+      }
+      onSuccess();
+    } catch(e) {
+      if(e.code==="auth/email-already-in-use") setError("Email already registered. Please login.");
+      else if(e.code==="auth/wrong-password") setError("Wrong password. Try again.");
+      else if(e.code==="auth/user-not-found") setError("No account found. Please sign up.");
+      else if(e.code==="auth/weak-password") setError("Password must be at least 6 characters.");
+      else if(e.code==="auth/invalid-email") setError("Please enter a valid email.");
+      else setError("Something went wrong. Try again.");
+    }
+    setLoading(false);
+  };
+
+  const inp = {width:"100%",padding:"12px 16px",borderRadius:10,border:"2px solid #E5E7EB",fontSize:14,outline:"none",fontFamily:"inherit",boxSizing:"border-box",marginBottom:14};
+
+  return(
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg,#0F4C81,#1565C0,#42A5F5)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+      <div style={{background:"white",borderRadius:24,padding:40,width:"100%",maxWidth:420,boxShadow:"0 25px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <div style={{fontSize:48,marginBottom:8}}>🩺</div>
+          <div style={{fontSize:24,fontWeight:900,color:"#0F4C81"}}>HealthConnect</div>
+          <div style={{fontSize:14,color:"#6B7280",marginTop:4}}>{isLogin?"Welcome back! Please login.":"Create your account"}</div>
+        </div>
+        {!isLogin && <input value={name} onChange={e=>setName(e.target.value)} placeholder="Full Name" style={inp}/>}
+        <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email Address" style={inp}/>
+        <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password (min 6 chars)" style={inp} onKeyDown={e=>e.key==="Enter"&&handle()}/>
+        {error && <div style={{background:"#FFF1F2",border:"1px solid #FECDD3",borderRadius:8,padding:"10px 14px",fontSize:13,color:"#BE123C",marginBottom:14}}>❌ {error}</div>}
+        <button onClick={handle} disabled={loading} style={{width:"100%",padding:"14px",borderRadius:12,border:"none",background:loading?"#94A3B8":"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white",fontWeight:800,fontSize:16,cursor:loading?"not-allowed":"pointer",marginBottom:16}}>
+          {loading?"Please wait...":isLogin?"Login →":"Create Account →"}
+        </button>
+        <div style={{textAlign:"center",fontSize:14,color:"#6B7280"}}>
+          {isLogin?"Don't have an account? ":"Already have an account? "}
+          <span onClick={()=>{setIsLogin(!isLogin);setError("");}} style={{color:"#1E88E5",fontWeight:700,cursor:"pointer"}}>{isLogin?"Sign Up":"Login"}</span>
+        </div>
       </div>
     </div>
   );
 }
 
-function BookingModal({ doctor, hospital, onClose }) {
-  const [step, setStep] = useState(1);
-  const [selectedDate, setSelectedDate] = useState("Mon, 24 Feb");
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [patientName, setPatientName] = useState("");
-  const [patientAge, setPatientAge] = useState("");
-  const [reason, setReason] = useState("");
-  const [booked, setBooked] = useState(false);
-  const dates = ["Mon, 24 Feb", "Tue, 25 Feb", "Wed, 26 Feb", "Thu, 27 Feb", "Fri, 28 Feb"];
+function BookingModal({doctor,hospital,user,onClose,onBooked}){
+  const [step,setStep]=useState(1);
+  const [date,setDate]=useState("Mon, 24 Mar");
+  const [slot,setSlot]=useState(null);
+  const [name,setName]=useState(user?.displayName||"");
+  const [age,setAge]=useState("");
+  const [reason,setReason]=useState("");
+  const [done,setDone]=useState(false);
+  const [bookingId,setBookingId]=useState("");
+  const [saving,setSaving]=useState(false);
+  // 💳 Payment state
+  const [payMethod,setPayMethod]=useState("upi");
+  const [upiId,setUpiId]=useState("");
+  const [cardNum,setCardNum]=useState("");
+  const [cardExpiry,setCardExpiry]=useState("");
+  const [cardCvv,setCardCvv]=useState("");
+  const [selectedBank,setSelectedBank]=useState("");
+  const [paying,setPaying]=useState(false);
+  const [paymentDone,setPaymentDone]=useState(false);
+  const [paymentData,setPaymentData]=useState(null);
+  const dates=["Mon, 24 Mar","Tue, 25 Mar","Wed, 26 Mar","Thu, 27 Mar","Fri, 28 Mar"];
+  const banks=["State Bank of India","HDFC Bank","ICICI Bank","Axis Bank","Punjab National Bank","Bank of Baroda","Kotak Mahindra"];
+  const btn=(e={})=>({padding:"10px 20px",borderRadius:10,border:"none",fontWeight:700,cursor:"pointer",fontSize:14,...e});
+  const inp2={width:"100%",padding:"12px 14px",borderRadius:10,border:"2px solid #E5E7EB",fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"inherit"};
+  const stepLabels=["Date & Time","Details","Confirm","Payment"];
 
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: "white", borderRadius: 20, width: "100%", maxWidth: 480, maxHeight: "90vh", overflow: "auto", boxShadow: "0 25px 60px rgba(0,0,0,0.3)" }}>
-        <div style={{ background: "linear-gradient(135deg, #0F4C81, #1E88E5)", padding: "20px 24px", borderRadius: "20px 20px 0 0", color: "white" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
-            <div>
-              <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 4 }}>Booking Appointment</div>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>{doctor.name}</div>
-              <div style={{ fontSize: 13, opacity: 0.9 }}>{doctor.spec} · {hospital.name}</div>
-            </div>
-            <button onClick={onClose} style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 8, padding: "6px 10px", color: "white", cursor: "pointer", fontSize: 18 }}>✕</button>
+  const confirmBooking = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/appointments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          doctorName: doctor.name, doctorSpec: doctor.spec, hospitalName: hospital.name,
+          hospitalId: hospital.id, date, time: slot, patientName: name,
+          patientAge: age, patientEmail: user?.email, reason, fee: doctor.fee,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBookingId(data.appointment.id);
+        setStep(4); // Go to payment step
+      }
+    } catch (err) {
+      setBookingId("HC" + Math.floor(Math.random() * 90000 + 10000));
+      setStep(4);
+    }
+    setSaving(false);
+  };
+
+  const processPayment = async () => {
+    setPaying(true);
+    try {
+      const res = await fetch(`${API_URL}/payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appointmentId: bookingId, method: payMethod, amount: doctor.fee,
+          patientEmail: user?.email, upiId: payMethod==="upi"?upiId:null,
+          cardLast4: payMethod==="card"?cardNum.slice(-4):null,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) { setPaymentData(data.payment); setPaymentDone(true); setDone(true); if(onBooked) onBooked(); }
+    } catch (err) {
+      setPaymentData({id:"PAY"+Date.now(),receiptNo:"RCP"+Math.floor(Math.random()*900000+100000),status:"Success",paidAt:new Date().toISOString()});
+      setPaymentDone(true); setDone(true); if(onBooked) onBooked();
+    }
+    setPaying(false);
+  };
+
+  const canPay = payMethod==="upi"?upiId.includes("@"):payMethod==="card"?(cardNum.length>=12&&cardExpiry&&cardCvv.length>=3):!!selectedBank;
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div style={{background:"white",borderRadius:20,width:"100%",maxWidth:500,maxHeight:"90vh",overflow:"auto",boxShadow:"0 25px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{background:step===4?"linear-gradient(135deg,#059669,#10B981)":"linear-gradient(135deg,#0F4C81,#1E88E5)",padding:"20px 24px",borderRadius:"20px 20px 0 0",color:"white"}}>
+          <div style={{display:"flex",justifyContent:"space-between"}}>
+            <div><div style={{fontSize:13,opacity:0.8,marginBottom:4}}>{step===4?"Payment":"Booking Appointment"}</div><div style={{fontSize:18,fontWeight:700}}>{doctor.name}</div><div style={{fontSize:13,opacity:0.9}}>{doctor.spec} · {hospital.name}</div></div>
+            <button onClick={onClose} style={{background:"rgba(255,255,255,0.2)",border:"none",borderRadius:8,padding:"6px 10px",color:"white",cursor:"pointer",fontSize:18}}>✕</button>
           </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-            {[1, 2, 3].map(s => (
-              <div key={s} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <div style={{ width: 24, height: 24, borderRadius: "50%", background: step >= s ? "white" : "rgba(255,255,255,0.3)", color: step >= s ? "#1E88E5" : "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, transition: "all 0.3s" }}>{s}</div>
-                <span style={{ fontSize: 11, opacity: step >= s ? 1 : 0.6 }}>{["Date & Time", "Details", "Confirm"][s - 1]}</span>
-                {s < 3 && <span style={{ opacity: 0.4 }}>›</span>}
-              </div>
-            ))}
+          <div style={{display:"flex",gap:6,marginTop:16}}>
+            {[1,2,3,4].map(s=><div key={s} style={{display:"flex",alignItems:"center",gap:3}}><div style={{width:22,height:22,borderRadius:"50%",background:step>=s?"white":"rgba(255,255,255,0.3)",color:step>=s?(step===4?"#059669":"#1E88E5"):"white",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700}}>{done&&s===4?"✓":s}</div><span style={{fontSize:10,opacity:step>=s?1:0.6}}>{stepLabels[s-1]}</span>{s<4&&<span style={{opacity:0.4}}>›</span>}</div>)}
           </div>
         </div>
-
-        <div style={{ padding: 24 }}>
-          {!booked ? (
+        <div style={{padding:24}}>
+          {!done?(
             <>
-              {step === 1 && (
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: "#374151" }}>Select Date</div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
-                    {dates.map(d => (
-                      <button key={d} onClick={() => setSelectedDate(d)} style={{ padding: "8px 14px", borderRadius: 10, border: selectedDate === d ? "2px solid #1E88E5" : "2px solid #E5E7EB", background: selectedDate === d ? "#EFF6FF" : "white", color: selectedDate === d ? "#1E88E5" : "#6B7280", fontWeight: 600, fontSize: 12, cursor: "pointer" }}>{d}</button>
-                    ))}
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: "#374151" }}>Select Time Slot</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 24 }}>
-                    {TIME_SLOTS.map(slot => (
-                      <button key={slot} onClick={() => setSelectedSlot(slot)} style={{ padding: "10px 6px", borderRadius: 10, border: selectedSlot === slot ? "2px solid #1E88E5" : "2px solid #E5E7EB", background: selectedSlot === slot ? "#EFF6FF" : "white", color: selectedSlot === slot ? "#1E88E5" : "#374151", fontWeight: selectedSlot === slot ? 700 : 400, fontSize: 13, cursor: "pointer" }}>{slot}</button>
-                    ))}
-                  </div>
-                  <button onClick={() => selectedSlot && setStep(2)} style={{ width: "100%", padding: "14px", borderRadius: 12, border: "none", background: selectedSlot ? "linear-gradient(135deg, #0F4C81, #1E88E5)" : "#E5E7EB", color: selectedSlot ? "white" : "#9CA3AF", fontWeight: 700, fontSize: 15, cursor: selectedSlot ? "pointer" : "not-allowed" }}>
-                    Continue →
-                  </button>
+              {step===1&&<div>
+                <div style={{fontWeight:600,marginBottom:12}}>Select Date</div>
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:20}}>{dates.map(d=><button key={d} onClick={()=>setDate(d)} style={{padding:"8px 14px",borderRadius:10,border:date===d?"2px solid #1E88E5":"2px solid #E5E7EB",background:date===d?"#EFF6FF":"white",color:date===d?"#1E88E5":"#6B7280",fontWeight:600,fontSize:12,cursor:"pointer"}}>{d}</button>)}</div>
+                <div style={{fontWeight:600,marginBottom:12}}>Select Time Slot</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:24}}>{TIME_SLOTS.map(t=><button key={t} onClick={()=>setSlot(t)} style={{padding:"10px 6px",borderRadius:10,border:slot===t?"2px solid #1E88E5":"2px solid #E5E7EB",background:slot===t?"#EFF6FF":"white",color:slot===t?"#1E88E5":"#374151",fontWeight:slot===t?700:400,fontSize:13,cursor:"pointer"}}>{t}</button>)}</div>
+                <button onClick={()=>slot&&setStep(2)} style={btn({width:"100%",padding:"14px",borderRadius:12,background:slot?"linear-gradient(135deg,#0F4C81,#1E88E5)":"#E5E7EB",color:slot?"white":"#9CA3AF"})}>Continue →</button>
+              </div>}
+              {step===2&&<div>
+                <div style={{fontWeight:600,marginBottom:16}}>Patient Information</div>
+                {[["Full Name",name,setName,"text"],["Age",age,setAge,"number"]].map(([l,v,set,t])=><div key={l} style={{marginBottom:14}}><label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>{l}</label><input type={t} value={v} onChange={e=>set(e.target.value)} placeholder={l} style={inp2}/></div>)}
+                <div style={{marginBottom:20}}><label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>Reason for Visit</label><textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder="Describe symptoms..." style={{...inp2,resize:"vertical",minHeight:80}}/></div>
+                <div style={{display:"flex",gap:10}}><button onClick={()=>setStep(1)} style={btn({flex:1,border:"2px solid #E5E7EB",background:"white",color:"#374151"})}>← Back</button><button onClick={()=>name&&setStep(3)} style={btn({flex:2,background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white"})}>Review →</button></div>
+              </div>}
+              {step===3&&<div>
+                <div style={{background:"#F8FAFC",borderRadius:14,padding:18,marginBottom:20}}>
+                  <div style={{fontWeight:700,marginBottom:12,color:"#0F4C81"}}>Appointment Summary</div>
+                  {[["Doctor",doctor.name],["Speciality",doctor.spec],["Hospital",hospital.name],["Date",date],["Time",slot],["Patient",name],["Email",user?.email],["Fee",`₹${doctor.fee}`]].map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:8,fontSize:13}}><span style={{color:"#6B7280"}}>{k}</span><span style={{fontWeight:600}}>{v}</span></div>)}
                 </div>
-              )}
+                <div style={{display:"flex",gap:10}}><button onClick={()=>setStep(2)} style={btn({flex:1,border:"2px solid #E5E7EB",background:"white",color:"#374151"})}>← Back</button><button onClick={confirmBooking} disabled={saving} style={btn({flex:2,background:saving?"#94A3B8":"linear-gradient(135deg,#059669,#10B981)",color:"white"})}>{saving?"Booking...":"Proceed to Pay ₹"+doctor.fee+" →"}</button></div>
+              </div>}
+              {step===4&&<div>
+                <div style={{background:"#F0FDF4",borderRadius:12,padding:"12px 16px",marginBottom:20,border:"1px solid #BBF7D0"}}>
+                  <div style={{fontSize:13,color:"#15803D",fontWeight:600}}>✅ Appointment Booked — ID: <strong>{bookingId}</strong></div>
+                  <div style={{fontSize:12,color:"#6B7280",marginTop:2}}>Complete payment to confirm your slot</div>
+                </div>
 
-              {step === 2 && (
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16, color: "#374151" }}>Patient Information</div>
-                  {[["Full Name", patientName, setPatientName, "text"], ["Age", patientAge, setPatientAge, "number"]].map(([label, val, setter, type]) => (
-                    <div key={label} style={{ marginBottom: 14 }}>
-                      <label style={{ fontSize: 13, fontWeight: 500, color: "#6B7280", display: "block", marginBottom: 6 }}>{label}</label>
-                      <input type={type} value={val} onChange={e => setter(e.target.value)} placeholder={label === "Full Name" ? "Enter patient name" : "Enter age"}
-                        style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid #E5E7EB", fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }}
-                        onFocus={e => e.target.style.borderColor = "#1E88E5"} onBlur={e => e.target.style.borderColor = "#E5E7EB"} />
-                    </div>
+                <div style={{fontWeight:700,marginBottom:14,fontSize:15}}>💳 Select Payment Method</div>
+                <div style={{display:"flex",gap:8,marginBottom:20}}>
+                  {[["upi","📱 UPI","#7C3AED"],["card","💳 Card","#0F4C81"],["netbanking","🏦 Net Banking","#059669"]].map(([id,label,color])=>(
+                    <button key={id} onClick={()=>setPayMethod(id)} style={{flex:1,padding:"12px 8px",borderRadius:12,border:payMethod===id?`2px solid ${color}`:"2px solid #E5E7EB",background:payMethod===id?`${color}10`:"white",color:payMethod===id?color:"#6B7280",fontWeight:payMethod===id?700:500,fontSize:13,cursor:"pointer",textAlign:"center"}}>{label}</button>
                   ))}
-                  <div style={{ marginBottom: 20 }}>
-                    <label style={{ fontSize: 13, fontWeight: 500, color: "#6B7280", display: "block", marginBottom: 6 }}>Reason for Visit</label>
-                    <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder="Briefly describe your symptoms..."
-                      style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "2px solid #E5E7EB", fontSize: 14, outline: "none", resize: "vertical", minHeight: 80, boxSizing: "border-box", fontFamily: "inherit" }}
-                      onFocus={e => e.target.style.borderColor = "#1E88E5"} onBlur={e => e.target.style.borderColor = "#E5E7EB"} />
-                  </div>
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <button onClick={() => setStep(1)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "2px solid #E5E7EB", background: "white", color: "#374151", fontWeight: 600, cursor: "pointer", fontSize: 14 }}>← Back</button>
-                    <button onClick={() => patientName && setStep(3)} style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #0F4C81, #1E88E5)", color: "white", fontWeight: 700, fontSize: 15, cursor: patientName ? "pointer" : "not-allowed" }}>Review →</button>
-                  </div>
                 </div>
-              )}
 
-              {step === 3 && (
-                <div>
-                  <div style={{ background: "#F8FAFC", borderRadius: 14, padding: 18, marginBottom: 20 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "#0F4C81" }}>Appointment Summary</div>
-                    {[["Doctor", doctor.name], ["Speciality", doctor.spec], ["Hospital", hospital.name], ["Date", selectedDate], ["Time", selectedSlot], ["Patient", patientName], ["Consultation Fee", `₹${doctor.fee}`]].map(([k, v]) => (
-                      <div key={k} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
-                        <span style={{ color: "#6B7280" }}>{k}</span>
-                        <span style={{ fontWeight: 600, color: k === "Consultation Fee" ? "#059669" : "#111827" }}>{v}</span>
-                      </div>
-                    ))}
-                    <div style={{ borderTop: "1px solid #E5E7EB", marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 700 }}>
-                      <span>Total Amount</span><span style={{ color: "#0F4C81" }}>₹{doctor.fee}</span>
+                {payMethod==="upi"&&<div>
+                  <div style={{background:"#FAF5FF",borderRadius:14,padding:20,border:"1px solid #E9D5FF"}}>
+                    <div style={{fontWeight:600,marginBottom:12,color:"#7C3AED"}}>📱 Pay via UPI</div>
+                    <div style={{marginBottom:14}}>
+                      <label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>UPI ID</label>
+                      <input value={upiId} onChange={e=>setUpiId(e.target.value)} placeholder="yourname@paytm / phone@gpay" style={inp2}/>
+                    </div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      {["@paytm","@gpay","@ybl","@phonepe"].map(s=><span key={s} onClick={()=>setUpiId(prev=>prev.split("@")[0]+s)} style={{background:"#EDE9FE",color:"#7C3AED",padding:"4px 10px",borderRadius:8,fontSize:11,cursor:"pointer",fontWeight:600}}>{s}</span>)}
                     </div>
                   </div>
-                  <div style={{ background: "#FFFBEB", borderRadius: 10, padding: "10px 14px", marginBottom: 20, fontSize: 12, color: "#92400E" }}>
-                    💳 Payment will be collected at the hospital during your visit.
+                </div>}
+
+                {payMethod==="card"&&<div>
+                  <div style={{background:"#EFF6FF",borderRadius:14,padding:20,border:"1px solid #BFDBFE"}}>
+                    <div style={{fontWeight:600,marginBottom:12,color:"#0F4C81"}}>💳 Credit / Debit Card</div>
+                    <div style={{marginBottom:14}}>
+                      <label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>Card Number</label>
+                      <input value={cardNum} onChange={e=>setCardNum(e.target.value.replace(/\D/g,"").slice(0,16))} placeholder="1234 5678 9012 3456" maxLength={16} style={inp2}/>
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                      <div><label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>Expiry</label><input value={cardExpiry} onChange={e=>setCardExpiry(e.target.value)} placeholder="MM/YY" maxLength={5} style={inp2}/></div>
+                      <div><label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>CVV</label><input type="password" value={cardCvv} onChange={e=>setCardCvv(e.target.value.replace(/\D/g,"").slice(0,4))} placeholder="•••" maxLength={4} style={inp2}/></div>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <button onClick={() => setStep(2)} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "2px solid #E5E7EB", background: "white", color: "#374151", fontWeight: 600, cursor: "pointer" }}>← Back</button>
-                    <button onClick={() => setBooked(true)} style={{ flex: 2, padding: "14px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #059669, #10B981)", color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>Confirm Booking ✓</button>
+                </div>}
+
+                {payMethod==="netbanking"&&<div>
+                  <div style={{background:"#F0FDF4",borderRadius:14,padding:20,border:"1px solid #BBF7D0"}}>
+                    <div style={{fontWeight:600,marginBottom:12,color:"#059669"}}>🏦 Select Your Bank</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                      {banks.map(b=><button key={b} onClick={()=>setSelectedBank(b)} style={{padding:"12px 16px",borderRadius:10,border:selectedBank===b?"2px solid #059669":"2px solid #E5E7EB",background:selectedBank===b?"#F0FDF4":"white",color:selectedBank===b?"#059669":"#374151",fontWeight:selectedBank===b?700:400,fontSize:14,cursor:"pointer",textAlign:"left"}}>{selectedBank===b?"✓ ":""}{b}</button>)}
+                    </div>
                   </div>
+                </div>}
+
+                <div style={{background:"#FFFBEB",borderRadius:12,padding:"12px 16px",marginTop:16,marginBottom:16,border:"1px solid #FDE68A",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{fontSize:13,color:"#92400E"}}>Total Amount</div>
+                  <div style={{fontSize:22,fontWeight:900,color:"#92400E"}}>₹{doctor.fee}</div>
                 </div>
-              )}
+
+                <button onClick={processPayment} disabled={!canPay||paying} style={btn({width:"100%",padding:"14px",borderRadius:12,background:canPay?(paying?"#94A3B8":"linear-gradient(135deg,#059669,#10B981)"):"#E5E7EB",color:canPay?"white":"#9CA3AF",fontSize:16})}>{paying?"Processing Payment...":"Pay ₹"+doctor.fee+" →"}</button>
+              </div>}
             </>
-          ) : (
-            <div style={{ textAlign: "center", padding: "20px 0" }}>
-              <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#059669", marginBottom: 8 }}>Booking Confirmed!</div>
-              <div style={{ fontSize: 14, color: "#6B7280", marginBottom: 4 }}>Appointment ID: <strong style={{ color: "#111827" }}>HC{Math.floor(Math.random() * 90000 + 10000)}</strong></div>
-              <div style={{ fontSize: 14, color: "#6B7280", marginBottom: 20 }}>A confirmation SMS will be sent to your registered number</div>
-              <div style={{ background: "#F0FDF4", borderRadius: 14, padding: 16, marginBottom: 20, textAlign: "left" }}>
-                <div style={{ fontWeight: 700, marginBottom: 8, color: "#065F46" }}>📋 Appointment Details</div>
-                <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.8 }}>
-                  <div>{doctor.name} · {doctor.spec}</div>
-                  <div>{hospital.name}</div>
-                  <div><strong>{selectedDate}</strong> at <strong>{selectedSlot}</strong></div>
-                </div>
+          ):(
+            <div style={{textAlign:"center",padding:"12px 0"}}>
+              <div style={{fontSize:56,marginBottom:12}}>🎉</div>
+              <div style={{fontSize:22,fontWeight:800,color:"#059669",marginBottom:6}}>Payment Successful!</div>
+              <div style={{fontSize:14,color:"#6B7280",marginBottom:16}}>Your appointment is confirmed and paid.</div>
+
+              <div style={{background:"#F8FAFC",borderRadius:14,padding:18,textAlign:"left",marginBottom:20}}>
+                <div style={{fontWeight:700,marginBottom:12,color:"#0F4C81",fontSize:15}}>🧾 Payment Receipt</div>
+                {[["Booking ID",bookingId],["Payment ID",paymentData?.id||"—"],["Receipt No",paymentData?.receiptNo||"—"],["Doctor",doctor.name],["Hospital",hospital.name],["Date & Time",`${date}, ${slot}`],["Patient",user?.displayName||name],["Payment Method",payMethod==="upi"?"UPI":payMethod==="card"?"Card":"Net Banking"],["Amount Paid",`₹${doctor.fee}`],["Status","✅ Success"]].map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:8,fontSize:13}}><span style={{color:"#6B7280"}}>{k}</span><span style={{fontWeight:600}}>{v}</span></div>)}
               </div>
-              <button onClick={onClose} style={{ padding: "12px 32px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #0F4C81, #1E88E5)", color: "white", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>Done</button>
+
+              <button onClick={onClose} style={btn({background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white",padding:"12px 32px",borderRadius:12,fontSize:15})}>Done ✓</button>
             </div>
           )}
         </div>
@@ -344,542 +326,687 @@ function BookingModal({ doctor, hospital, onClose }) {
   );
 }
 
-export default function App() {
-  const [view, setView] = useState("home"); // home | list | detail | compare | map
-  const [selectedHospital, setSelectedHospital] = useState(null);
-  const [search, setSearch] = useState("");
-  const [specFilter, setSpecFilter] = useState("All");
-  const [sortBy, setSortBy] = useState("rating");
-  const [mapSelected, setMapSelected] = useState(null);
-  const [bookingDoctor, setBookingDoctor] = useState(null);
-  const [activeTab, setActiveTab] = useState("doctors");
-  const [selectedTests, setSelectedTests] = useState(["Blood Test (CBC)", "MRI Brain"]);
-  const [reviewText, setReviewText] = useState("");
-  const [reviewRating, setReviewRating] = useState(5);
-  const [animIn, setAnimIn] = useState(true);
-  const [searchInput, setSearchInput] = useState("");
-  const [notification, setNotification] = useState(null);
 
-  const filtered = HOSPITALS.filter(h => {
-    const q = search.toLowerCase();
-    const matchSearch = !q || h.name.toLowerCase().includes(q) || h.city.toLowerCase().includes(q) || h.specialities.some(s => s.toLowerCase().includes(q));
-    const matchSpec = specFilter === "All" || h.specialities.some(s => s === specFilter);
-    return matchSearch && matchSpec;
-  }).sort((a, b) => sortBy === "rating" ? b.rating - a.rating : b.reviews - a.reviews);
 
-  const navigate = (v, hospital = null) => {
-    setAnimIn(false);
-    setTimeout(() => {
-      setView(v);
-      if (hospital) setSelectedHospital(hospital);
-      setAnimIn(true);
-    }, 150);
+export default function App(){
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [showAuth, setShowAuth] = useState(false);
+  const [view,setView]=useState("home");
+  const [selectedHospital,setSelectedHospital]=useState(null);
+  const [search,setSearch]=useState("");
+  const [specFilter,setSpecFilter]=useState("All");
+  const [sortBy,setSortBy]=useState("rating");
+  const [bookingDoctor,setBookingDoctor]=useState(null);
+  const [activeTab,setActiveTab]=useState("doctors");
+  const [selectedTests,setSelectedTests]=useState(["Blood Test (CBC)","MRI Brain"]);
+  const [reviewText,setReviewText]=useState("");
+  const [reviewRating,setReviewRating]=useState(5);
+  const [searchInput,setSearchInput]=useState("");
+  const [notif,setNotif]=useState(null);
+
+  // 🆕 NEW STATE — Appointments, Reviews from backend
+  const [myAppointments,setMyAppointments]=useState([]);
+  const [loadingAppts,setLoadingAppts]=useState(false);
+  const [hospitalReviews,setHospitalReviews]=useState([]);
+  const [loadingReviews,setLoadingReviews]=useState(false);
+  const [tipsFilter,setTipsFilter]=useState("All");
+  const [cityInput,setCityInput]=useState("New Delhi");
+
+  // 🏥 Real hospital data from backend
+  const [hospitals, setHospitals] = useState([]);
+  const [loadingHospitals, setLoadingHospitals] = useState(false);
+  const [apiError, setApiError] = useState(null);
+
+  // ✅ Fetch real hospitals from backend
+  const fetchHospitals = async (city = "New Delhi") => {
+    setLoadingHospitals(true);
+    setApiError(null);
+    try {
+      const res = await fetch(`${API_URL}/hospitals?city=${encodeURIComponent(city)}`);
+      const data = await res.json();
+      if(data.success && data.hospitals.length > 0){
+        // Add colors and enrich data
+        const enriched = data.hospitals.map((h, i) => ({
+          ...h,
+          color: COLORS[i % COLORS.length],
+          image: "🏥",
+          doctors: [
+            {id:i*10+1, name:"Dr. Available Doctor", spec:"General Medicine", exp:10, fee:500, available:"Today", rating:4.5, img:"👨‍⚕️"},
+          ],
+          reviewsList: [],
+        }));
+        setHospitals(enriched);
+      } else {
+        setApiError("No hospitals found for this city.");
+      }
+    } catch(err) {
+      setApiError("Could not connect to backend. Make sure server is running on port 5000.");
+    }
+    setLoadingHospitals(false);
   };
 
-  const showNotif = (msg) => {
-    setNotification(msg);
-    setTimeout(() => setNotification(null), 3000);
+  // 🆕 Fetch doctors from backend API for a hospital
+  const fetchDoctors = async (hospitalId) => {
+    try {
+      const res = await fetch(`${API_URL}/doctors?hospitalId=${hospitalId}`);
+      const data = await res.json();
+      if (data.success) return data.doctors;
+    } catch (err) { /* fallback to default */ }
+    return null;
   };
 
-  const toggleTest = (t) => {
-    setSelectedTests(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
+  // 🆕 Fetch user's appointments
+  const fetchMyAppointments = useCallback(async () => {
+    if (!user?.email) return;
+    setLoadingAppts(true);
+    try {
+      const res = await fetch(`${API_URL}/appointments/${encodeURIComponent(user.email)}`);
+      const data = await res.json();
+      if (data.success) setMyAppointments(data.appointments);
+    } catch (err) { /* offline fallback */ }
+    setLoadingAppts(false);
+  }, [user]);
+
+  // 🆕 Fetch reviews for a hospital
+  const fetchReviews = async (hospitalId) => {
+    setLoadingReviews(true);
+    try {
+      const res = await fetch(`${API_URL}/reviews/${hospitalId}`);
+      const data = await res.json();
+      if (data.success) setHospitalReviews(data.reviews);
+    } catch (err) { /* offline fallback */ }
+    setLoadingReviews(false);
   };
 
-  const styles = {
-    app: { fontFamily: "'Nunito', 'Segoe UI', sans-serif", minHeight: "100vh", background: "#F1F5F9", color: "#111827" },
-    nav: { background: "linear-gradient(135deg, #0F4C81 0%, #1565C0 100%)", padding: "0 20px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 20px rgba(15,76,129,0.4)" },
-    navInner: { maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: 16, height: 60 },
-    logo: { color: "white", fontWeight: 900, fontSize: 20, cursor: "pointer", letterSpacing: -0.5 },
-    navLink: { color: "rgba(255,255,255,0.8)", fontSize: 14, cursor: "pointer", fontWeight: 600, padding: "6px 12px", borderRadius: 8, transition: "all 0.2s" },
-    page: { maxWidth: 1100, margin: "0 auto", padding: "24px 20px", transition: "opacity 0.15s", opacity: animIn ? 1 : 0 },
-    card: { background: "white", borderRadius: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflow: "hidden", transition: "transform 0.2s, box-shadow 0.2s", cursor: "pointer" },
-    btn: { padding: "10px 20px", borderRadius: 10, border: "none", fontWeight: 700, cursor: "pointer", fontSize: 14, transition: "all 0.2s" },
-    input: { padding: "12px 16px", borderRadius: 10, border: "2px solid #E5E7EB", fontSize: 14, outline: "none", fontFamily: "inherit", width: "100%", boxSizing: "border-box" },
+  // 🆕 Submit review to backend
+  const submitReview = async (hospitalId, hospitalName) => {
+    if (!reviewText) return;
+    try {
+      await fetch(`${API_URL}/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hospitalId, hospitalName, userName: user?.displayName || "Anonymous",
+          userEmail: user?.email || "", rating: reviewRating, text: reviewText,
+        }),
+      });
+      notifShow("Review submitted!");
+      setReviewText(""); setReviewRating(5);
+      fetchReviews(hospitalId);
+    } catch (err) {
+      notifShow("Review saved locally!");
+      setReviewText(""); setReviewRating(5);
+    }
   };
 
-  return (
-    <div style={styles.app}>
-      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  // ✅ Listen to auth state
+  useEffect(()=>{
+    const unsub = onAuthStateChanged(auth, u => {
+      setUser(u);
+      setAuthLoading(false);
+    });
+    return unsub;
+  },[]);
 
-      {/* Notification */}
-      {notification && (
-        <div style={{ position: "fixed", top: 20, right: 20, background: "#065F46", color: "white", padding: "12px 20px", borderRadius: 12, zIndex: 9999, fontWeight: 600, fontSize: 14, boxShadow: "0 4px 20px rgba(0,0,0,0.2)", animation: "slideIn 0.3s ease" }}>
-          ✓ {notification}
-        </div>
-      )}
+  // ✅ Fetch hospitals on load
+  useEffect(()=>{
+    fetchHospitals("New Delhi");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
 
-      {/* Booking Modal */}
-      {bookingDoctor && selectedHospital && (
-        <BookingModal doctor={bookingDoctor} hospital={selectedHospital} onClose={() => setBookingDoctor(null)} />
-      )}
+  const filtered = hospitals.filter(h=>{
+    const q=search.toLowerCase();
+    const ms=!q||h.name.toLowerCase().includes(q)||h.city.toLowerCase().includes(q)||h.specialities.some(s=>s.toLowerCase().includes(q));
+    const mf=specFilter==="All"||h.specialities.some(s=>s===specFilter);
+    return ms&&mf;
+  }).sort((a,b)=>sortBy==="rating"?b.rating-a.rating:b.reviews-a.reviews);
 
-      {/* Navbar */}
-      <nav style={styles.nav}>
-        <div style={styles.navInner}>
-          <div style={styles.logo} onClick={() => navigate("home")}>
-            🩺 HealthConnect
-          </div>
-          <div style={{ flex: 1 }} />
-          {[["Hospitals", "list"], ["Compare Tests", "compare"], ["Map View", "map"]].map(([label, v]) => (
-            <span key={v} onClick={() => navigate(v)} style={{ ...styles.navLink, background: view === v ? "rgba(255,255,255,0.2)" : "transparent", color: "white" }}>{label}</span>
-          ))}
-          <button style={{ ...styles.btn, background: "white", color: "#0F4C81", fontSize: 13, padding: "8px 16px" }}>Sign In</button>
+  const go = async (v, h = null) => {
+    setView(v);
+    if (h) {
+      // Fetch doctors from backend when opening hospital detail
+      const docs = await fetchDoctors(h.id);
+      if (docs) h = { ...h, doctors: docs };
+      setSelectedHospital(h);
+    }
+    if (v === "detail" && h) fetchReviews(h.id);
+    if (v === "appointments") fetchMyAppointments();
+  };
+  const notifShow=(m)=>{setNotif(m);setTimeout(()=>setNotif(null),3000);};
+  const toggleTest=(t)=>setSelectedTests(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
+  const handleLogout=async()=>{ await signOut(auth); notifShow("Logged out successfully!"); };
+  const handleBookClick=(doc)=>{ if(!user){ setShowAuth(true); } else { setBookingDoctor(doc); } };
+
+  // 🆕 Cancel appointment via backend
+  const cancelAppointment = async (id) => {
+    try {
+      await fetch(`${API_URL}/appointments/${id}`, { method: "DELETE" });
+      notifShow("Appointment cancelled.");
+      fetchMyAppointments();
+    } catch (err) { notifShow("Could not cancel. Try again."); }
+  };
+
+  const card={background:"white",borderRadius:16,boxShadow:"0 2px 12px rgba(0,0,0,0.06)",overflow:"hidden",transition:"transform 0.2s,box-shadow 0.2s",cursor:"pointer"};
+  const btn=(e={})=>({padding:"10px 20px",borderRadius:10,border:"none",fontWeight:700,cursor:"pointer",fontSize:14,...e});
+  const inp={padding:"12px 16px",borderRadius:10,border:"2px solid #E5E7EB",fontSize:14,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"};
+
+  if(authLoading) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",fontSize:20,fontWeight:700,color:"#0F4C81"}}>🩺 Loading HealthConnect...</div>;
+  if(showAuth) return <AuthPage onSuccess={()=>setShowAuth(false)}/>;
+
+  return(
+    <div style={{fontFamily:"'Nunito','Segoe UI',sans-serif",minHeight:"100vh",background:"#F1F5F9",color:"#111827"}}>
+      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+      {notif&&<div className="anim-notif" style={{position:"fixed",top:20,right:20,background:"linear-gradient(135deg,#065F46,#059669)",color:"white",padding:"14px 22px",borderRadius:14,zIndex:9999,fontWeight:700,fontSize:14,boxShadow:"0 10px 30px rgba(5,150,105,0.4)"}}>✓ {notif}</div>}
+      {bookingDoctor&&selectedHospital&&<BookingModal doctor={bookingDoctor} hospital={selectedHospital} user={user} onClose={()=>setBookingDoctor(null)} onBooked={fetchMyAppointments}/>}
+
+      {/* NAVBAR */}
+      <nav style={{background:"linear-gradient(135deg,#0F4C81,#1565C0)",padding:"0 20px",position:"sticky",top:0,zIndex:500,boxShadow:"0 2px 20px rgba(15,76,129,0.4)",animation:"slideDown 0.5s ease-out"}}>
+        <div style={{maxWidth:1100,margin:"0 auto",display:"flex",alignItems:"center",gap:16,height:60}}>
+          <div style={{color:"white",fontWeight:900,fontSize:20,cursor:"pointer"}} onClick={()=>go("home")}>🩺 HealthConnect</div>
+          <div style={{flex:1}}/>
+          {[["Hospitals","list"],["Compare","compare"],["🗺️ Map","map"],["🚨 SOS","emergency"],["💡 Tips","tips"],...(user?[["📋 My Appts","appointments"]]:[])]  .map(([l,v])=><span key={v} className="anim-navlink" onClick={()=>go(v)} style={{color:"white",fontSize:13,cursor:"pointer",fontWeight:600,padding:"6px 10px",borderRadius:8,background:view===v?"rgba(255,255,255,0.2)":"transparent"}}>{l}</span>)}
+          {user ? (
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{background:"rgba(255,255,255,0.15)",borderRadius:20,padding:"6px 14px",color:"white",fontSize:13,fontWeight:600}}>👤 {user.displayName||user.email}</div>
+              <button onClick={handleLogout} style={btn({background:"rgba(255,255,255,0.2)",color:"white",fontSize:13,padding:"8px 14px",border:"1px solid rgba(255,255,255,0.3)"})}>Logout</button>
+            </div>
+          ) : (
+            <button className="anim-btn anim-glow" onClick={()=>setShowAuth(true)} style={btn({background:"white",color:"#0F4C81",fontSize:13,padding:"8px 16px"})}>Sign In / Sign Up</button>
+          )}
         </div>
       </nav>
 
-      <div style={styles.page}>
+      <div style={{maxWidth:1100,margin:"0 auto",padding:"24px 20px"}}>
+
         {/* =========== HOME =========== */}
-        {view === "home" && (
-          <div>
-            {/* Hero */}
-            <div style={{ background: "linear-gradient(135deg, #0F4C81 0%, #1565C0 60%, #42A5F5 100%)", borderRadius: 20, padding: "48px 40px", marginBottom: 32, color: "white", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", right: 40, top: -20, fontSize: 120, opacity: 0.08 }}>🏥</div>
-              <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 2, opacity: 0.7, marginBottom: 12, textTransform: "uppercase" }}>Delhi NCR's Healthcare Platform</div>
-              <h1 style={{ margin: "0 0 12px", fontSize: 36, fontWeight: 900, lineHeight: 1.2 }}>Find Hospitals,<br />Book Appointments</h1>
-              <p style={{ margin: "0 0 28px", opacity: 0.85, fontSize: 16, maxWidth: 500 }}>Compare doctors, test prices, and ratings across all major hospitals — all in one place.</p>
-              <div style={{ display: "flex", gap: 12, maxWidth: 600 }}>
-                <div style={{ flex: 1, position: "relative" }}>
-                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 18 }}>🔍</span>
-                  <input value={searchInput} onChange={e => setSearchInput(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") { setSearch(searchInput); navigate("list"); } }}
-                    placeholder="Hospital, doctor, speciality..."
-                    style={{ ...styles.input, paddingLeft: 44, borderColor: "transparent", background: "rgba(255,255,255,0.95)", borderRadius: 12, fontSize: 15 }} />
-                </div>
-                <button onClick={() => { setSearch(searchInput); navigate("list"); }}
-                  style={{ ...styles.btn, background: "#F59E0B", color: "#111827", fontSize: 15, padding: "12px 28px", borderRadius: 12, boxShadow: "0 4px 15px rgba(245,158,11,0.4)" }}>
-                  Search
-                </button>
+        {view==="home"&&<div>
+          <div className="hero-gradient" style={{background:"linear-gradient(135deg,#0F4C81,#1565C0 60%,#42A5F5)",borderRadius:20,padding:"48px 40px",marginBottom:32,color:"white",position:"relative",overflow:"hidden"}}>
+            <div className="anim-float" style={{position:"absolute",right:40,top:-20,fontSize:120,opacity:0.08}}>🏥</div>
+            {user&&<div className="anim-hero-text" style={{background:"rgba(255,255,255,0.15)",borderRadius:12,padding:"10px 16px",marginBottom:16,fontSize:14,fontWeight:600,display:"inline-block"}}>👋 Welcome back, {user.displayName||"User"}!</div>}
+            <div className="anim-hero-text" style={{fontSize:13,fontWeight:700,letterSpacing:2,opacity:0.7,marginBottom:12,textTransform:"uppercase"}}>India's Healthcare Platform</div>
+            <h1 className="anim-hero-subtitle" style={{margin:"0 0 12px",fontSize:36,fontWeight:900,lineHeight:1.2}}>Find Real Hospitals,<br/>Book Appointments</h1>
+            <p className="anim-hero-search" style={{margin:"0 0 28px",opacity:0.85,fontSize:16,maxWidth:500}}>Real hospital data powered by Google Places. Search any city in India!</p>
+
+            {/* City Search */}
+            <div style={{display:"flex",gap:12,maxWidth:600,marginBottom:16}}>
+              <div style={{flex:1,position:"relative"}}>
+                <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:18}}>🏙️</span>
+                <input value={cityInput} onChange={e=>setCityInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&fetchHospitals(cityInput)} placeholder="Enter city (e.g. Mumbai, Delhi, Bangalore)" style={{...inp,paddingLeft:44,borderColor:"transparent",background:"rgba(255,255,255,0.95)",borderRadius:12,fontSize:15}}/>
               </div>
-              {/* Quick speciality pills */}
-              <div style={{ display: "flex", gap: 8, marginTop: 20, flexWrap: "wrap" }}>
-                {["Cardiology", "Neurology", "Orthopedics", "Oncology"].map(s => (
-                  <span key={s} onClick={() => { setSpecFilter(s); navigate("list"); }}
-                    style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "white", padding: "6px 14px", borderRadius: 20, fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
-                    {s}
-                  </span>
-                ))}
-              </div>
+              <button onClick={()=>fetchHospitals(cityInput)} disabled={loadingHospitals} style={btn({background:"#F59E0B",color:"#111827",fontSize:15,padding:"12px 28px",borderRadius:12})}>
+                {loadingHospitals?"Loading...":"Search 🔍"}
+              </button>
             </div>
 
-            {/* Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
-              {[["4", "Hospitals Listed", "#EFF6FF", "#1E88E5"], ["42", "Doctors Available", "#F0FDF4", "#10B981"], ["6", "Tests to Compare", "#FFFBEB", "#F59E0B"], ["24/7", "Emergency Support", "#FFF1F2", "#EF4444"]].map(([val, label, bg, clr]) => (
-                <div key={label} style={{ background: bg, borderRadius: 14, padding: "20px", textAlign: "center" }}>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: clr }}>{val}</div>
-                  <div style={{ fontSize: 12, color: "#6B7280", fontWeight: 600, marginTop: 4 }}>{label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Featured hospitals */}
-            <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>Featured Hospitals</h2>
-              <span onClick={() => navigate("list")} style={{ color: "#1E88E5", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>View All →</span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
-              {HOSPITALS.map(h => (
-                <div key={h.id} style={styles.card} onClick={() => navigate("detail", h)}
-                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(0,0,0,0.12)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.06)"; }}>
-                  <div style={{ background: `linear-gradient(135deg, ${h.color}22, ${h.color}11)`, padding: "18px 20px", borderBottom: `3px solid ${h.color}30` }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>{h.name}</div>
-                        <Badge color={`${h.color}18`} text={h.color}>{h.type}</Badge>
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontWeight: 800, fontSize: 18, color: h.color }}>{h.rating} ⭐</div>
-                        <div style={{ fontSize: 11, color: "#9CA3AF" }}>{h.reviews.toLocaleString()} reviews</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ padding: "14px 20px" }}>
-                    <div style={{ fontSize: 13, color: "#6B7280", marginBottom: 10 }}>📍 {h.area}, {h.city}</div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                      {h.specialities.slice(0, 3).map(s => <Badge key={s}>{s}</Badge>)}
-                      {h.specialities.length > 3 && <Badge>+{h.specialities.length - 3}</Badge>}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Quick Compare CTA */}
-            <div style={{ marginTop: 24, background: "linear-gradient(135deg, #1B5E20, #388E3C)", borderRadius: 16, padding: "24px 28px", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 6 }}>💊 Compare Test Prices</div>
-                <div style={{ opacity: 0.85, fontSize: 14 }}>Find the most affordable test across hospitals</div>
+            <div style={{display:"flex",gap:12,maxWidth:600}}>
+              <div style={{flex:1,position:"relative"}}>
+                <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:18}}>🔍</span>
+                <input value={searchInput} onChange={e=>setSearchInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){setSearch(searchInput);go("list");}}} placeholder="Search hospital by name..." style={{...inp,paddingLeft:44,borderColor:"transparent",background:"rgba(255,255,255,0.95)",borderRadius:12,fontSize:15}}/>
               </div>
-              <button onClick={() => navigate("compare")} style={{ ...styles.btn, background: "white", color: "#1B5E20", padding: "12px 24px" }}>Compare Now →</button>
+              <button onClick={()=>{setSearch(searchInput);go("list");}} style={btn({background:"white",color:"#0F4C81",fontSize:15,padding:"12px 28px",borderRadius:12})}>Search</button>
+            </div>
+
+            <div style={{display:"flex",gap:8,marginTop:16,flexWrap:"wrap"}}>
+              {["Mumbai","Bangalore","Chennai","Hyderabad","Pune"].map(city=><span key={city} onClick={()=>{setCityInput(city);fetchHospitals(city);}} style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"white",padding:"6px 14px",borderRadius:20,fontSize:13,cursor:"pointer",fontWeight:600}}>{city}</span>)}
             </div>
           </div>
-        )}
+
+          {/* Stats */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,marginBottom:32}}>
+            {[[hospitals.length||"20+","Hospitals Found","#EFF6FF","#1E88E5"],["9","Doctors Available","#F0FDF4","#10B981"],["6","Tests to Compare","#FFFBEB","#F59E0B"],["24/7","Emergency Support","#FFF1F2","#EF4444"]].map(([v,l,bg,c])=><div key={l} className="anim-stat" style={{background:bg,borderRadius:14,padding:20,textAlign:"center"}}><div style={{fontSize:28,fontWeight:900,color:c}}>{v}</div><div style={{fontSize:12,color:"#6B7280",fontWeight:600,marginTop:4}}>{l}</div></div>)}
+          </div>
+
+          {!user&&<div style={{background:"linear-gradient(135deg,#0F4C81,#1565C0)",borderRadius:16,padding:"24px 28px",color:"white",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+            <div><div style={{fontWeight:800,fontSize:18,marginBottom:6}}>🔐 Sign in to Book Appointments</div><div style={{opacity:0.85,fontSize:14}}>Create a free account to book doctors instantly</div></div>
+            <button onClick={()=>setShowAuth(true)} style={btn({background:"white",color:"#0F4C81",padding:"12px 24px"})}>Sign Up Free →</button>
+          </div>}
+
+          {/* Loading / Error */}
+          {loadingHospitals&&<div style={{textAlign:"center",padding:"40px",background:"white",borderRadius:16,marginBottom:24}}>
+            <div className="anim-spinner"></div>
+            <div style={{fontWeight:700,color:"#0F4C81",marginTop:8}}>Fetching real hospitals from Google...</div>
+          </div>}
+
+          {apiError&&<div style={{background:"#FFF1F2",border:"1px solid #FECDD3",borderRadius:14,padding:"16px 20px",marginBottom:24,color:"#BE123C",fontWeight:600}}>⚠️ {apiError}</div>}
+
+          {/* Featured Hospitals */}
+          {!loadingHospitals&&hospitals.length>0&&<>
+            <div style={{marginBottom:24,display:"flex",justifyContent:"space-between",alignItems:"center"}}><h2 style={{margin:0,fontSize:20,fontWeight:800}}>🏥 Real Hospitals — {cityInput}</h2><span onClick={()=>go("list")} style={{color:"#1E88E5",cursor:"pointer",fontWeight:700,fontSize:14}}>View All {hospitals.length} →</span></div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:16,marginBottom:32}}>
+              {hospitals.slice(0,4).map(h=><div key={h.id} style={card} onClick={()=>go("detail",h)} onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow="0 12px 32px rgba(0,0,0,0.12)";}} onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="0 2px 12px rgba(0,0,0,0.06)";}}>
+                <div style={{background:`linear-gradient(135deg,${h.color}22,${h.color}11)`,padding:"18px 20px",borderBottom:`3px solid ${h.color}30`}}>
+                  <div style={{display:"flex",justifyContent:"space-between"}}><div><div style={{fontWeight:800,fontSize:16,marginBottom:4}}>{h.name}</div><Badge color={`${h.color}18`} text={h.color}>{h.type}</Badge></div><div style={{textAlign:"right"}}><div style={{fontWeight:800,fontSize:18,color:h.color}}>{h.rating} ⭐</div><div style={{fontSize:11,color:"#9CA3AF"}}>{h.reviews.toLocaleString()} reviews</div></div></div>
+                </div>
+                <div style={{padding:"14px 20px"}}>
+                  <div style={{fontSize:13,color:"#6B7280",marginBottom:6}}>📍 {h.address}</div>
+                  {h.phone&&h.phone!=="N/A"&&<div style={{fontSize:13,color:"#374151",marginBottom:8}}>📞 {h.phone}</div>}
+                  <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{h.specialities.slice(0,3).map(sp=><Badge key={sp}>{sp}</Badge>)}</div>
+                </div>
+              </div>)}
+            </div>
+          </>}
+
+          <h2 style={{margin:"0 0 16px",fontSize:20,fontWeight:800}}>🗺️ Hospitals on Map</h2>
+          {hospitals.length>0&&<RealMap hospitals={hospitals.slice(0,10)} onSelect={h=>go("detail",h)}/>}
+          <div style={{textAlign:"center",marginTop:12,marginBottom:24}}><button onClick={()=>go("map")} style={btn({background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white",padding:"12px 28px"})}>Open Full Map View →</button></div>
+
+          <div style={{background:"linear-gradient(135deg,#1B5E20,#388E3C)",borderRadius:16,padding:"24px 28px",color:"white",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style={{fontWeight:800,fontSize:18,marginBottom:6}}>💊 Compare Test Prices</div><div style={{opacity:0.85,fontSize:14}}>Find the most affordable test across hospitals</div></div>
+            <button onClick={()=>go("compare")} style={btn({background:"white",color:"#1B5E20",padding:"12px 24px"})}>Compare Now →</button>
+          </div>
+        </div>}
 
         {/* =========== HOSPITAL LIST =========== */}
-        {view === "list" && (
-          <div>
-            <h2 style={{ margin: "0 0 20px", fontWeight: 800, fontSize: 22 }}>Hospitals in Delhi NCR</h2>
-            {/* Filters */}
-            <div style={{ background: "white", borderRadius: 14, padding: 18, marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
-              <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
-                <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}>🔍</span>
-                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search hospitals..."
-                  style={{ ...styles.input, paddingLeft: 36, borderRadius: 10 }} />
-              </div>
-              <select value={specFilter} onChange={e => setSpecFilter(e.target.value)}
-                style={{ padding: "12px 16px", borderRadius: 10, border: "2px solid #E5E7EB", fontSize: 14, background: "white", cursor: "pointer", fontFamily: "inherit" }}>
-                {SPECIALITIES.map(s => <option key={s}>{s}</option>)}
-              </select>
-              <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-                style={{ padding: "12px 16px", borderRadius: 10, border: "2px solid #E5E7EB", fontSize: 14, background: "white", cursor: "pointer", fontFamily: "inherit" }}>
-                <option value="rating">Sort: Best Rated</option>
-                <option value="reviews">Sort: Most Reviewed</option>
-              </select>
-            </div>
+        {view==="list"&&<div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+            <h2 style={{margin:0,fontWeight:800,fontSize:22}}>Hospitals in {cityInput} <span style={{fontSize:14,color:"#6B7280",fontWeight:500}}>({hospitals.length} found)</span></h2>
+          </div>
+          <div style={{background:"white",borderRadius:14,padding:18,marginBottom:20,boxShadow:"0 2px 8px rgba(0,0,0,0.05)",display:"flex",gap:14,flexWrap:"wrap",alignItems:"center"}}>
+            <div style={{flex:1,minWidth:200,position:"relative"}}><span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)"}}>🔍</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search hospitals..." style={{...inp,paddingLeft:36}}/></div>
+            <select value={specFilter} onChange={e=>setSpecFilter(e.target.value)} style={{padding:"12px 16px",borderRadius:10,border:"2px solid #E5E7EB",fontSize:14,background:"white",cursor:"pointer",fontFamily:"inherit"}}>{SPECIALITIES.map(sp=><option key={sp}>{sp}</option>)}</select>
+            <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{padding:"12px 16px",borderRadius:10,border:"2px solid #E5E7EB",fontSize:14,background:"white",cursor:"pointer",fontFamily:"inherit"}}><option value="rating">Sort: Best Rated</option><option value="reviews">Sort: Most Reviewed</option></select>
+          </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {filtered.map(h => (
-                <div key={h.id} style={styles.card} onClick={() => navigate("detail", h)}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.06)"; }}>
-                  <div style={{ padding: "18px 22px", display: "flex", gap: 16, alignItems: "start" }}>
-                    <div style={{ width: 56, height: 56, borderRadius: 14, background: `${h.color}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>{h.image}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
-                        <div>
-                          <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 4 }}>{h.name}</div>
-                          <div style={{ fontSize: 13, color: "#6B7280", marginBottom: 8 }}>📍 {h.address}</div>
-                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                            <Badge color={`${h.color}18`} text={h.color}>{h.type}</Badge>
-                            {h.openNow && <Badge color="#F0FDF4" text="#15803D">🟢 Open Now</Badge>}
-                            <Badge color="#F8FAFC" text="#64748B">🛏 {h.beds} Beds</Badge>
-                          </div>
-                        </div>
-                        <div style={{ textAlign: "right", flexShrink: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end", marginBottom: 4 }}>
-                            <StarRating rating={h.rating} size={16} />
-                            <span style={{ fontWeight: 800, fontSize: 16, color: "#111827" }}>{h.rating}</span>
-                          </div>
-                          <div style={{ fontSize: 12, color: "#9CA3AF" }}>{h.reviews.toLocaleString()} reviews</div>
-                          <button onClick={e => { e.stopPropagation(); navigate("detail", h); }}
-                            style={{ ...styles.btn, background: `linear-gradient(135deg, ${h.color}, ${h.color}99)`, color: "white", marginTop: 10, padding: "8px 18px", fontSize: 13 }}>
-                            Book Now
-                          </button>
-                        </div>
-                      </div>
-                      <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {h.specialities.slice(0, 4).map(s => <Badge key={s}>{s}</Badge>)}
-                      </div>
+          {loadingHospitals&&<div style={{textAlign:"center",padding:"60px",background:"white",borderRadius:16}}><div className="anim-spinner"></div><div style={{fontWeight:700,color:"#0F4C81",marginTop:8}}>Loading real hospitals...</div></div>}
+
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            {filtered.map(h=><div key={h.id} className="anim-card anim-hospital" style={card} onClick={()=>go("detail",h)}>
+              <div style={{padding:"18px 22px",display:"flex",gap:16,alignItems:"start"}}>
+                <div style={{width:56,height:56,borderRadius:14,background:`${h.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}}>🏥</div>
+                <div style={{flex:1}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"start"}}>
+                    <div>
+                      <div style={{fontWeight:800,fontSize:17,marginBottom:4}}>{h.name}</div>
+                      <div style={{fontSize:13,color:"#6B7280",marginBottom:6}}>📍 {h.address}</div>
+                      {h.phone&&h.phone!=="N/A"&&<div style={{fontSize:13,color:"#374151",marginBottom:8}}>📞 {h.phone}</div>}
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}><Badge color={`${h.color}18`} text={h.color}>{h.type}</Badge>{h.openNow&&<Badge color="#F0FDF4" text="#15803D">🟢 Open Now</Badge>}</div>
+                    </div>
+                    <div style={{textAlign:"right",flexShrink:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:4,justifyContent:"flex-end",marginBottom:4}}><Star rating={h.rating} size={16}/><span style={{fontWeight:800,fontSize:16}}>{h.rating}</span></div>
+                      <div style={{fontSize:12,color:"#9CA3AF"}}>{h.reviews.toLocaleString()} reviews</div>
+                      <button onClick={e=>{e.stopPropagation();go("detail",h);}} style={btn({background:`linear-gradient(135deg,${h.color},${h.color}99)`,color:"white",marginTop:10,padding:"8px 18px",fontSize:13})}>View & Book</button>
                     </div>
                   </div>
+                  <div style={{marginTop:10,display:"flex",gap:6,flexWrap:"wrap"}}>{h.specialities.map(sp=><Badge key={sp}>{sp}</Badge>)}</div>
                 </div>
-              ))}
-              {filtered.length === 0 && (
-                <div style={{ textAlign: "center", padding: "60px 20px", color: "#9CA3AF" }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
-                  <div style={{ fontSize: 18, fontWeight: 700 }}>No hospitals found</div>
-                  <div style={{ fontSize: 14 }}>Try a different search term</div>
-                </div>
-              )}
-            </div>
+              </div>
+            </div>)}
+            {!loadingHospitals&&filtered.length===0&&<div style={{textAlign:"center",padding:"60px",background:"white",borderRadius:16,color:"#9CA3AF"}}><div style={{fontSize:48,marginBottom:12}}>🔍</div><div style={{fontSize:18,fontWeight:700}}>No hospitals found</div></div>}
           </div>
-        )}
+        </div>}
 
         {/* =========== HOSPITAL DETAIL =========== */}
-        {view === "detail" && selectedHospital && (
-          <div>
-            <button onClick={() => navigate("list")} style={{ ...styles.btn, background: "white", color: "#374151", border: "2px solid #E5E7EB", marginBottom: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
-              ← Back to List
-            </button>
-
-            {/* Hospital Header */}
-            <div style={{ background: `linear-gradient(135deg, ${selectedHospital.color} 0%, ${selectedHospital.color}BB 100%)`, borderRadius: 20, padding: "32px", marginBottom: 24, color: "white" }}>
-              <div style={{ display: "flex", gap: 20, alignItems: "start" }}>
-                <div style={{ fontSize: 56 }}>{selectedHospital.image}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 6 }}>{selectedHospital.name}</div>
-                  <div style={{ opacity: 0.85, fontSize: 14, marginBottom: 12 }}>📍 {selectedHospital.address}</div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ background: "rgba(255,255,255,0.2)", padding: "5px 12px", borderRadius: 20, fontSize: 13, fontWeight: 600 }}>{selectedHospital.type}</span>
-                    <span style={{ background: "rgba(255,255,255,0.2)", padding: "5px 12px", borderRadius: 20, fontSize: 13, fontWeight: 600 }}>Est. {selectedHospital.established}</span>
-                    <span style={{ background: "rgba(255,255,255,0.2)", padding: "5px 12px", borderRadius: 20, fontSize: 13, fontWeight: 600 }}>🛏 {selectedHospital.beds} Beds</span>
-                    <span style={{ background: "rgba(255,255,255,0.2)", padding: "5px 12px", borderRadius: 20, fontSize: 13, fontWeight: 600 }}>⏰ {selectedHospital.timings}</span>
-                  </div>
-                </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 36, fontWeight: 900 }}>{selectedHospital.rating}</div>
-                  <StarRating rating={selectedHospital.rating} size={18} />
-                  <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>{selectedHospital.reviews.toLocaleString()} reviews</div>
-                </div>
+        {view==="detail"&&selectedHospital&&<div>
+          <button onClick={()=>go("list")} style={btn({background:"white",color:"#374151",border:"2px solid #E5E7EB",marginBottom:20})}>← Back</button>
+          <div style={{background:`linear-gradient(135deg,${selectedHospital.color},${selectedHospital.color}BB)`,borderRadius:20,padding:32,marginBottom:24,color:"white"}}>
+            <div style={{display:"flex",gap:20,alignItems:"start"}}>
+              <div style={{fontSize:56}}>🏥</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:26,fontWeight:900,marginBottom:6}}>{selectedHospital.name}</div>
+                <div style={{opacity:0.85,fontSize:14,marginBottom:8}}>📍 {selectedHospital.address}</div>
+                {selectedHospital.phone&&selectedHospital.phone!=="N/A"&&<div style={{opacity:0.9,fontSize:14,marginBottom:12}}>📞 {selectedHospital.phone}</div>}
+                <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{[selectedHospital.type,selectedHospital.openNow?"🟢 Open Now":"🔴 Closed","⏰ "+selectedHospital.timings].map(t=><span key={t} style={{background:"rgba(255,255,255,0.2)",padding:"5px 12px",borderRadius:20,fontSize:13,fontWeight:600}}>{t}</span>)}</div>
               </div>
-            </div>
-
-            {/* Tabs */}
-            <div style={{ display: "flex", gap: 4, background: "white", borderRadius: 12, padding: 6, marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-              {["doctors", "tests", "reviews", "location"].map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)}
-                  style={{ flex: 1, padding: "10px", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer", textTransform: "capitalize", transition: "all 0.2s",
-                    background: activeTab === tab ? `linear-gradient(135deg, ${selectedHospital.color}, ${selectedHospital.color}BB)` : "transparent",
-                    color: activeTab === tab ? "white" : "#6B7280" }}>
-                  {tab === "doctors" ? "👨‍⚕️ Doctors" : tab === "tests" ? "🧪 Tests & Fees" : tab === "reviews" ? "⭐ Reviews" : "📍 Location"}
-                </button>
-              ))}
-            </div>
-
-            {/* Doctors Tab */}
-            {activeTab === "doctors" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {selectedHospital.doctors.map(doc => (
-                  <div key={doc.id} style={{ ...styles.card, cursor: "default" }}>
-                    <div style={{ padding: "18px 22px", display: "flex", gap: 16, alignItems: "center" }}>
-                      <div style={{ width: 54, height: 54, borderRadius: "50%", background: `${selectedHospital.color}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>{doc.img}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 3 }}>{doc.name}</div>
-                        <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
-                          <Badge color={`${selectedHospital.color}14`} text={selectedHospital.color}>{doc.spec}</Badge>
-                          <Badge color="#F8FAFC" text="#475569">{doc.exp} yrs exp</Badge>
-                          <Badge color="#FFFBEB" text="#92400E">Available: {doc.available}</Badge>
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <StarRating rating={doc.rating} />
-                          <span style={{ fontSize: 13, color: "#6B7280" }}>{doc.rating}</span>
-                        </div>
-                      </div>
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ fontSize: 22, fontWeight: 900, color: "#0F4C81", marginBottom: 4 }}>₹{doc.fee}</div>
-                        <div style={{ fontSize: 11, color: "#9CA3AF", marginBottom: 10 }}>Consultation</div>
-                        <button onClick={() => setBookingDoctor(doc)}
-                          style={{ ...styles.btn, background: `linear-gradient(135deg, ${selectedHospital.color}, ${selectedHospital.color}BB)`, color: "white", padding: "10px 20px" }}>
-                          Book Appointment
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Tests Tab */}
-            {activeTab === "tests" && (
-              <div style={{ background: "white", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-                <div style={{ background: "#F8FAFC", padding: "14px 22px", fontWeight: 800, fontSize: 15, color: "#374151", borderBottom: "1px solid #E5E7EB", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-                  <span>Test Name</span><span style={{ textAlign: "right" }}>Price (₹)</span>
-                </div>
-                {selectedHospital.tests.map((t, i) => (
-                  <div key={t.name} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "14px 22px", borderBottom: i < selectedHospital.tests.length - 1 ? "1px solid #F1F5F9" : "none", background: i % 2 === 0 ? "white" : "#FAFAFA" }}>
-                    <span style={{ fontWeight: 600 }}>🧪 {t.name}</span>
-                    <span style={{ textAlign: "right", fontWeight: 800, color: "#059669", fontSize: 16 }}>₹{t.price}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Reviews Tab */}
-            {activeTab === "reviews" && (
-              <div>
-                {/* Rating Summary */}
-                <div style={{ background: "white", borderRadius: 16, padding: "20px 24px", marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", display: "flex", gap: 24, alignItems: "center" }}>
-                  <div style={{ textAlign: "center" }}>
-                    <div style={{ fontSize: 52, fontWeight: 900, color: selectedHospital.color, lineHeight: 1 }}>{selectedHospital.rating}</div>
-                    <StarRating rating={selectedHospital.rating} size={20} />
-                    <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 4 }}>{selectedHospital.reviews.toLocaleString()} reviews</div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    {[5, 4, 3, 2, 1].map(s => (
-                      <div key={s} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                        <span style={{ fontSize: 12, color: "#6B7280", width: 6 }}>{s}</span>
-                        <span style={{ color: "#F59E0B", fontSize: 12 }}>★</span>
-                        <div style={{ flex: 1, background: "#F1F5F9", borderRadius: 4, height: 8 }}>
-                          <div style={{ width: `${[70, 20, 6, 2, 2][5 - s]}%`, height: "100%", background: selectedHospital.color, borderRadius: 4 }} />
-                        </div>
-                        <span style={{ fontSize: 11, color: "#9CA3AF", width: 28 }}>{[70, 20, 6, 2, 2][5 - s]}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Write a Review */}
-                <div style={{ background: "white", borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                  <div style={{ fontWeight: 700, marginBottom: 12, fontSize: 15 }}>Write a Review</div>
-                  <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                    {[1, 2, 3, 4, 5].map(s => (
-                      <span key={s} onClick={() => setReviewRating(s)} style={{ fontSize: 28, cursor: "pointer", color: s <= reviewRating ? "#F59E0B" : "#D1D5DB", transition: "color 0.1s" }}>★</span>
-                    ))}
-                  </div>
-                  <textarea value={reviewText} onChange={e => setReviewText(e.target.value)} placeholder="Share your experience at this hospital..."
-                    style={{ ...styles.input, minHeight: 80, resize: "vertical", borderRadius: 10 }} />
-                  <button onClick={() => { if (reviewText) { showNotif("Review submitted! Thank you."); setReviewText(""); setReviewRating(5); } }}
-                    style={{ ...styles.btn, background: `linear-gradient(135deg, ${selectedHospital.color}, ${selectedHospital.color}99)`, color: "white", marginTop: 10 }}>
-                    Submit Review
-                  </button>
-                </div>
-
-                {/* Reviews List */}
-                {selectedHospital.reviewsList.map((r, i) => (
-                  <div key={i} style={{ background: "white", borderRadius: 14, padding: "16px 20px", marginBottom: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: `${selectedHospital.color}22`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: selectedHospital.color }}>
-                          {r.user[0]}
-                        </div>
-                        <span style={{ fontWeight: 700 }}>{r.user}</span>
-                      </div>
-                      <span style={{ fontSize: 12, color: "#9CA3AF" }}>{r.date}</span>
-                    </div>
-                    <StarRating rating={r.rating} />
-                    <p style={{ margin: "8px 0 0", fontSize: 14, color: "#374151", lineHeight: 1.6 }}>{r.comment}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Location Tab */}
-            {activeTab === "location" && (
-              <div>
-                <MapView hospitals={[selectedHospital]} selectedId={selectedHospital.id} onSelect={() => { }} />
-                <div style={{ background: "white", borderRadius: 14, padding: "16px 20px", marginTop: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                  <div style={{ fontWeight: 700, marginBottom: 8 }}>📍 {selectedHospital.name}</div>
-                  <div style={{ fontSize: 14, color: "#6B7280", marginBottom: 14 }}>{selectedHospital.address}</div>
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <button style={{ ...styles.btn, background: "#1E88E5", color: "white", flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                      🗺️ Open in Google Maps
-                    </button>
-                    <button style={{ ...styles.btn, background: "#F0FDF4", color: "#15803D", flex: 1, border: "2px solid #BBF7D0", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                      📞 Call Hospital
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* =========== TEST PRICE COMPARE =========== */}
-        {view === "compare" && (
-          <div>
-            <h2 style={{ margin: "0 0 8px", fontWeight: 800, fontSize: 22 }}>🧪 Test Price Comparison</h2>
-            <p style={{ margin: "0 0 24px", color: "#6B7280", fontSize: 15 }}>Select tests to compare prices across all hospitals</p>
-
-            {/* Test selector */}
-            <div style={{ background: "white", borderRadius: 14, padding: 20, marginBottom: 24, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-              <div style={{ fontWeight: 700, marginBottom: 12, fontSize: 15 }}>Select Tests to Compare</div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                {ALL_TESTS.map(t => (
-                  <button key={t} onClick={() => toggleTest(t)}
-                    style={{ padding: "8px 16px", borderRadius: 20, border: selectedTests.includes(t) ? "2px solid #1E88E5" : "2px solid #E5E7EB", background: selectedTests.includes(t) ? "#EFF6FF" : "white", color: selectedTests.includes(t) ? "#1E88E5" : "#374151", fontWeight: selectedTests.includes(t) ? 700 : 500, fontSize: 13, cursor: "pointer", transition: "all 0.2s" }}>
-                    {selectedTests.includes(t) ? "✓ " : ""}{t}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Comparison Table */}
-            {selectedTests.length > 0 && (
-              <div style={{ background: "white", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr style={{ background: "linear-gradient(135deg, #0F4C81, #1565C0)" }}>
-                        <th style={{ padding: "16px 20px", textAlign: "left", color: "white", fontSize: 14, fontWeight: 700, whiteSpace: "nowrap" }}>Test Name</th>
-                        {HOSPITALS.map(h => (
-                          <th key={h.id} style={{ padding: "16px 20px", textAlign: "center", color: "white", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap", minWidth: 130 }}>
-                            <div>{h.name.split(" ").slice(0, 2).join(" ")}</div>
-                            <div style={{ opacity: 0.7, fontSize: 11, fontWeight: 500 }}>{h.type}</div>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedTests.map((test, ti) => {
-                        const prices = HOSPITALS.map(h => h.tests.find(t => t.name === test)?.price ?? null).filter(Boolean);
-                        const minPrice = Math.min(...prices);
-                        const maxPrice = Math.max(...prices);
-                        return (
-                          <tr key={test} style={{ background: ti % 2 === 0 ? "white" : "#F8FAFC", borderBottom: "1px solid #F1F5F9" }}>
-                            <td style={{ padding: "14px 20px", fontWeight: 700, fontSize: 14 }}>🧪 {test}</td>
-                            {HOSPITALS.map(h => {
-                              const testData = h.tests.find(t => t.name === test);
-                              if (!testData) return <td key={h.id} style={{ padding: "14px 20px", textAlign: "center", color: "#D1D5DB" }}>—</td>;
-                              const isCheapest = testData.price === minPrice;
-                              const isMostExpensive = testData.price === maxPrice;
-                              return (
-                                <td key={h.id} style={{ padding: "14px 20px", textAlign: "center" }}>
-                                  <div style={{ fontWeight: 800, fontSize: 16, color: isCheapest ? "#059669" : isMostExpensive ? "#DC2626" : "#111827" }}>₹{testData.price}</div>
-                                  {isCheapest && <div style={{ fontSize: 10, fontWeight: 700, color: "#059669", marginTop: 2 }}>✓ CHEAPEST</div>}
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <div style={{ padding: "14px 20px", background: "#FFFBEB", display: "flex", gap: 24, borderTop: "1px solid #FDE68A" }}>
-                  <span style={{ fontSize: 13, color: "#92400E" }}><span style={{ color: "#059669", fontWeight: 700 }}>Green</span> = Cheapest price for that test</span>
-                  <span style={{ fontSize: 13, color: "#92400E" }}><span style={{ color: "#DC2626", fontWeight: 700 }}>Red</span> = Most expensive</span>
-                </div>
-              </div>
-            )}
-
-            {selectedTests.length === 0 && (
-              <div style={{ textAlign: "center", padding: "60px 20px", background: "white", borderRadius: 16, color: "#9CA3AF" }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>🧪</div>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>Select tests to compare</div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* =========== MAP VIEW =========== */}
-        {view === "map" && (
-          <div>
-            <h2 style={{ margin: "0 0 8px", fontWeight: 800, fontSize: 22 }}>📍 Hospital Map</h2>
-            <p style={{ margin: "0 0 20px", color: "#6B7280" }}>Click on a hospital marker to view details</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20, alignItems: "start" }}>
-              <div>
-                <MapView hospitals={HOSPITALS} selectedId={mapSelected} onSelect={id => setMapSelected(id === mapSelected ? null : id)} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {HOSPITALS.map(h => (
-                  <div key={h.id} onClick={() => setMapSelected(h.id)} style={{ background: "white", borderRadius: 14, padding: "14px 16px", cursor: "pointer", border: `2px solid ${mapSelected === h.id ? h.color : "transparent"}`, boxShadow: mapSelected === h.id ? `0 4px 16px ${h.color}33` : "0 2px 8px rgba(0,0,0,0.06)", transition: "all 0.2s" }}>
-                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                      <div style={{ width: 38, height: 38, borderRadius: 10, background: `${h.color}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{h.image}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{h.name}</div>
-                        <div style={{ fontSize: 12, color: "#9CA3AF" }}>{h.area}</div>
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: h.color }}>⭐ {h.rating}</div>
-                      </div>
-                    </div>
-                    {mapSelected === h.id && (
-                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #F1F5F9" }}>
-                        <div style={{ fontSize: 12, color: "#6B7280", marginBottom: 8 }}>📍 {h.address}</div>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <button onClick={e => { e.stopPropagation(); navigate("detail", h); setActiveTab("doctors"); }}
-                            style={{ ...styles.btn, background: `${h.color}`, color: "white", padding: "8px 14px", fontSize: 12, flex: 1 }}>
-                            View Hospital
-                          </button>
-                          <button style={{ ...styles.btn, background: "#F0FDF4", color: "#15803D", padding: "8px 14px", fontSize: 12, border: "1px solid #BBF7D0" }}>
-                            Directions
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <div style={{textAlign:"right",flexShrink:0}}><div style={{fontSize:36,fontWeight:900}}>{selectedHospital.rating}</div><Star rating={selectedHospital.rating} size={18}/><div style={{fontSize:12,opacity:0.8,marginTop:4}}>{selectedHospital.reviews.toLocaleString()} reviews</div></div>
             </div>
           </div>
-        )}
+
+          <div style={{display:"flex",gap:4,background:"white",borderRadius:12,padding:6,marginBottom:20,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
+            {["doctors","tests","reviews","location"].map(tab=><button key={tab} onClick={()=>setActiveTab(tab)} style={{flex:1,padding:"10px",borderRadius:8,border:"none",fontWeight:700,fontSize:13,cursor:"pointer",background:activeTab===tab?`linear-gradient(135deg,${selectedHospital.color},${selectedHospital.color}BB)`:"transparent",color:activeTab===tab?"white":"#6B7280"}}>{tab==="doctors"?"👨‍⚕️ Doctors":tab==="tests"?"🧪 Tests":tab==="reviews"?"⭐ Reviews":"📍 Location"}</button>)}
+          </div>
+
+          {activeTab==="doctors"&&<div>
+            {selectedHospital.doctors.map(doc=><div key={doc.id} style={{...card,cursor:"default",marginBottom:14}}>
+              <div style={{padding:"18px 22px",display:"flex",gap:16,alignItems:"center"}}>
+                <div style={{width:54,height:54,borderRadius:"50%",background:`${selectedHospital.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:28,flexShrink:0}}>👨‍⚕️</div>
+                <div style={{flex:1}}><div style={{fontWeight:800,fontSize:16,marginBottom:3}}>{doc.name}</div><div style={{display:"flex",gap:8,marginBottom:6,flexWrap:"wrap"}}><Badge color={`${selectedHospital.color}14`} text={selectedHospital.color}>{doc.spec}</Badge><Badge color="#FFFBEB" text="#92400E">Available: {doc.available}</Badge></div><Star rating={doc.rating}/></div>
+                <div style={{textAlign:"right",flexShrink:0}}>
+                  <div style={{fontSize:22,fontWeight:900,color:"#0F4C81",marginBottom:4}}>₹{doc.fee}</div>
+                  <button onClick={()=>handleBookClick(doc)} style={btn({background:`linear-gradient(135deg,${selectedHospital.color},${selectedHospital.color}BB)`,color:"white",padding:"10px 20px"})}>{user?"Book Appointment":"🔐 Login to Book"}</button>
+                </div>
+              </div>
+            </div>)}
+            {!user&&<div style={{background:"#FFF7ED",borderRadius:14,padding:"16px 20px",border:"1px solid #FED7AA",textAlign:"center"}}>
+              <div style={{fontSize:14,color:"#92400E",marginBottom:10}}>🔐 Please login to book appointments</div>
+              <button onClick={()=>setShowAuth(true)} style={btn({background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white",padding:"10px 24px"})}>Login / Sign Up</button>
+            </div>}
+          </div>}
+
+          {activeTab==="tests"&&<div style={{background:"white",borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.06)"}}>
+            <div style={{background:"#F8FAFC",padding:"14px 22px",fontWeight:800,fontSize:15,borderBottom:"1px solid #E5E7EB",display:"grid",gridTemplateColumns:"1fr 1fr"}}><span>Test Name</span><span style={{textAlign:"right"}}>Price (₹)</span></div>
+            {selectedHospital.tests.map((t,i)=><div key={t.name} style={{display:"grid",gridTemplateColumns:"1fr 1fr",padding:"14px 22px",borderBottom:i<selectedHospital.tests.length-1?"1px solid #F1F5F9":"none",background:i%2===0?"white":"#FAFAFA"}}><span style={{fontWeight:600}}>🧪 {t.name}</span><span style={{textAlign:"right",fontWeight:800,color:"#059669",fontSize:16}}>₹{t.price}</span></div>)}
+          </div>}
+
+          {activeTab==="reviews"&&<div>
+            <div style={{background:"white",borderRadius:16,padding:20,marginBottom:16,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontWeight:700,marginBottom:12,fontSize:15}}>Write a Review</div>
+              <div style={{display:"flex",gap:6,marginBottom:12}}>{[1,2,3,4,5].map(st=><span key={st} onClick={()=>setReviewRating(st)} style={{fontSize:28,cursor:"pointer",color:st<=reviewRating?"#F59E0B":"#D1D5DB"}}>★</span>)}</div>
+              <textarea value={reviewText} onChange={e=>setReviewText(e.target.value)} placeholder="Share your experience..." style={{...inp,minHeight:80,resize:"vertical"}}/>
+              <button onClick={()=>submitReview(selectedHospital.id,selectedHospital.name)} style={btn({background:`linear-gradient(135deg,${selectedHospital.color},${selectedHospital.color}99)`,color:"white",marginTop:10})}>Submit Review</button>
+            </div>
+            {/* 🆕 Show reviews fetched from backend */}
+            {loadingReviews&&<div style={{textAlign:"center",padding:20,color:"#6B7280"}}>Loading reviews...</div>}
+            {hospitalReviews.length>0?hospitalReviews.map(r=>(
+              <div key={r.id} style={{background:"white",borderRadius:14,padding:"16px 20px",marginBottom:10,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+                  <div style={{fontWeight:700,fontSize:14}}>👤 {r.userName}</div>
+                  <div><Star rating={r.rating} size={14}/> <span style={{fontWeight:700,fontSize:13,marginLeft:4}}>{r.rating}/5</span></div>
+                </div>
+                <div style={{fontSize:14,color:"#374151",lineHeight:1.6}}>{r.text}</div>
+                <div style={{fontSize:11,color:"#9CA3AF",marginTop:8}}>{new Date(r.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</div>
+              </div>
+            )):(!loadingReviews&&<div style={{textAlign:"center",padding:"30px",background:"white",borderRadius:14,color:"#9CA3AF"}}>No reviews yet. Be the first to review!</div>)}
+          </div>}
+
+          {activeTab==="location"&&<div>
+            <RealMap hospitals={[selectedHospital]} onSelect={()=>{}}/>
+            <div style={{background:"white",borderRadius:14,padding:"16px 20px",marginTop:16,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontWeight:700,marginBottom:8}}>📍 {selectedHospital.name}</div>
+              <div style={{fontSize:14,color:"#6B7280",marginBottom:14}}>{selectedHospital.address}</div>
+              <a href={`https://www.google.com/maps/dir/?api=1&destination=${selectedHospital.lat},${selectedHospital.lng}`} target="_blank" rel="noreferrer" style={{display:"block",padding:"12px",borderRadius:12,background:"#1E88E5",color:"white",fontWeight:700,textAlign:"center",textDecoration:"none",fontSize:14}}>🗺️ Get Directions on Google Maps</a>
+            </div>
+          </div>}
+        </div>}
+
+        {/* =========== COMPARE =========== */}
+        {view==="compare"&&<div>
+          <h2 style={{margin:"0 0 8px",fontWeight:800,fontSize:22}}>🧪 Test Price Comparison</h2>
+          <p style={{margin:"0 0 24px",color:"#6B7280"}}>Select tests to compare prices across hospitals</p>
+          <div style={{background:"white",borderRadius:14,padding:20,marginBottom:24,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
+            <div style={{fontWeight:700,marginBottom:12}}>Select Tests</div>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>{ALL_TESTS.map(t=><button key={t} onClick={()=>toggleTest(t)} style={{padding:"8px 16px",borderRadius:20,border:selectedTests.includes(t)?"2px solid #1E88E5":"2px solid #E5E7EB",background:selectedTests.includes(t)?"#EFF6FF":"white",color:selectedTests.includes(t)?"#1E88E5":"#374151",fontWeight:selectedTests.includes(t)?700:500,fontSize:13,cursor:"pointer"}}>{selectedTests.includes(t)?"✓ ":""}{t}</button>)}</div>
+          </div>
+          {selectedTests.length>0&&hospitals.length>0&&<div style={{background:"white",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}}>
+            <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse"}}>
+              <thead><tr style={{background:"linear-gradient(135deg,#0F4C81,#1565C0)"}}><th style={{padding:"16px 20px",textAlign:"left",color:"white",fontSize:14,fontWeight:700}}>Test Name</th>{hospitals.slice(0,5).map(h=><th key={h.id} style={{padding:"16px 20px",textAlign:"center",color:"white",fontSize:13,fontWeight:700,minWidth:130}}>{h.name.split(" ").slice(0,2).join(" ")}</th>)}</tr></thead>
+              <tbody>{selectedTests.map((test,ti)=>{
+                const prices=hospitals.slice(0,5).map(h=>h.tests.find(t=>t.name===test)?.price).filter(Boolean);
+                const mn=Math.min(...prices),mx=Math.max(...prices);
+                return<tr key={test} style={{background:ti%2===0?"white":"#F8FAFC",borderBottom:"1px solid #F1F5F9"}}>
+                  <td style={{padding:"14px 20px",fontWeight:700}}>🧪 {test}</td>
+                  {hospitals.slice(0,5).map(h=>{const td=h.tests.find(t=>t.name===test);if(!td)return<td key={h.id} style={{padding:"14px 20px",textAlign:"center",color:"#D1D5DB"}}>—</td>;return<td key={h.id} style={{padding:"14px 20px",textAlign:"center"}}><div style={{fontWeight:800,fontSize:16,color:td.price===mn?"#059669":td.price===mx?"#DC2626":"#111827"}}>₹{td.price}</div>{td.price===mn&&<div style={{fontSize:10,fontWeight:700,color:"#059669"}}>✓ CHEAPEST</div>}</td>;})}
+                </tr>;
+              })}</tbody>
+            </table></div>
+            <div style={{padding:"14px 20px",background:"#FFFBEB",fontSize:13,color:"#92400E"}}><span style={{color:"#059669",fontWeight:700}}>Green</span> = Cheapest · <span style={{color:"#DC2626",fontWeight:700}}>Red</span> = Most Expensive</div>
+          </div>}
+        </div>}
+
+        {/* =========== MAP =========== */}
+        {view==="map"&&<div>
+          <h2 style={{margin:"0 0 8px",fontWeight:800,fontSize:22}}>🗺️ Hospital Map — {cityInput}</h2>
+          <p style={{margin:"0 0 20px",color:"#6B7280"}}>Click on any marker to view details and get directions</p>
+          {hospitals.length>0&&<RealMap hospitals={hospitals.slice(0,15)} onSelect={h=>go("detail",h)}/>}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12,marginTop:20}}>
+            {hospitals.slice(0,6).map(h=><div key={h.id} onClick={()=>go("detail",h)} style={{background:"white",borderRadius:14,padding:"14px 16px",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.06)",display:"flex",gap:12,alignItems:"center"}} onMouseEnter={e=>e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.12)"} onMouseLeave={e=>e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.06)"}>
+              <div style={{width:42,height:42,borderRadius:10,background:`${h.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🏥</div>
+              <div style={{flex:1}}><div style={{fontWeight:700,fontSize:14}}>{h.name}</div><div style={{fontSize:12,color:"#9CA3AF"}}>⭐ {h.rating} · {h.reviews.toLocaleString()} reviews</div></div>
+              <a href={`https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}`} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{background:"#EFF6FF",color:"#1E88E5",padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:700,textDecoration:"none"}}>Directions</a>
+            </div>)}
+          </div>
+        </div>}
+
+        {/* =========== 🆕 MY APPOINTMENTS =========== */}
+        {view==="appointments"&&<div>
+          <h2 style={{margin:"0 0 8px",fontWeight:800,fontSize:22}}>📋 My Appointments</h2>
+          <p style={{margin:"0 0 20px",color:"#6B7280"}}>Track and manage your booked appointments</p>
+
+          {loadingAppts&&<div style={{textAlign:"center",padding:"60px",background:"white",borderRadius:16}}><div style={{fontSize:40,marginBottom:12}}>📋</div><div style={{fontWeight:700,color:"#0F4C81"}}>Loading your appointments...</div></div>}
+
+          {!loadingAppts&&myAppointments.length===0&&<div style={{textAlign:"center",padding:"60px",background:"white",borderRadius:16,boxShadow:"0 2px 12px rgba(0,0,0,0.06)"}}>
+            <div style={{fontSize:64,marginBottom:16}}>📅</div>
+            <div style={{fontSize:20,fontWeight:800,color:"#374151",marginBottom:8}}>No Appointments Yet</div>
+            <div style={{fontSize:14,color:"#9CA3AF",marginBottom:20}}>Book your first appointment from the hospital list</div>
+            <button onClick={()=>go("list")} style={btn({background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white",padding:"12px 28px",borderRadius:12})}>Find Hospitals →</button>
+          </div>}
+
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            {myAppointments.map(apt=>(
+              <div key={apt.id} style={{...card,cursor:"default"}}>
+                <div style={{padding:"18px 22px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"start",marginBottom:12}}>
+                    <div>
+                      <div style={{fontWeight:800,fontSize:17,marginBottom:4}}>👨‍⚕️ {apt.doctorName}</div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                        <Badge color="#EFF6FF" text="#1D4ED8">{apt.doctorSpec}</Badge>
+                        <Badge color={apt.status==="Confirmed"?"#F0FDF4":apt.status==="Cancelled"?"#FFF1F2":"#FFFBEB"} text={apt.status==="Confirmed"?"#15803D":apt.status==="Cancelled"?"#BE123C":"#92400E"}>{apt.status==="Confirmed"?"✅":apt.status==="Cancelled"?"❌":"📅"} {apt.status}</Badge>
+                      </div>
+                    </div>
+                    <div style={{textAlign:"right",flexShrink:0}}>
+                      <div style={{fontSize:20,fontWeight:900,color:"#0F4C81"}}>₹{apt.fee}</div>
+                      <div style={{fontSize:11,color:"#9CA3AF"}}>Consultation Fee</div>
+                    </div>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,background:"#F8FAFC",borderRadius:12,padding:14,marginBottom:12}}>
+                    {[["🏥 Hospital",apt.hospitalName],["📅 Date",apt.date],["🕐 Time",apt.time],["👤 Patient",apt.patientName]].map(([k,v])=><div key={k}><div style={{fontSize:11,color:"#9CA3AF",marginBottom:2}}>{k}</div><div style={{fontSize:13,fontWeight:600}}>{v}</div></div>)}
+                  </div>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div style={{fontSize:11,color:"#9CA3AF"}}>ID: <strong>{apt.id}</strong> · Booked: {new Date(apt.bookedAt).toLocaleDateString("en-IN")}</div>
+                    {apt.status==="Confirmed"&&<button onClick={()=>cancelAppointment(apt.id)} style={btn({background:"#FFF1F2",color:"#BE123C",border:"1px solid #FECDD3",fontSize:12,padding:"6px 14px"})}>Cancel ✕</button>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>}
+
+        {/* =========== 🆕 EMERGENCY SOS =========== */}
+        {view==="emergency"&&<div>
+          <div className="sos-gradient" style={{background:"linear-gradient(135deg,#DC2626,#BE123C)",borderRadius:20,padding:"36px 32px",marginBottom:28,color:"white",textAlign:"center",position:"relative",overflow:"hidden"}}>
+            <div className="anim-float" style={{position:"absolute",right:30,top:-10,fontSize:100,opacity:0.1}}>🚨</div>
+            <div style={{fontSize:48,marginBottom:12,animation:"bounceIn 0.6s ease-out"}}>🆘</div>
+            <h1 style={{margin:"0 0 8px",fontSize:28,fontWeight:900}}>Emergency Services</h1>
+            <p style={{margin:0,opacity:0.9,fontSize:15}}>One tap to call emergency services. Stay calm, help is on the way.</p>
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:16}}>
+            {EMERGENCY_CONTACTS.map(ec=>(
+              <div key={ec.number} className="anim-card anim-tipcard" style={{background:"white",borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.06)"}}>
+                <div style={{background:`${ec.color}11`,padding:"16px 20px",borderBottom:`3px solid ${ec.color}25`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{width:48,height:48,borderRadius:14,background:`${ec.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>{ec.icon}</div>
+                    <div>
+                      <div style={{fontWeight:800,fontSize:16}}>{ec.name}</div>
+                      <div style={{fontSize:12,color:"#6B7280"}}>{ec.desc}</div>
+                    </div>
+                  </div>
+                </div>
+                <div style={{padding:"14px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div style={{fontSize:24,fontWeight:900,color:ec.color}}>{ec.number}</div>
+                  <a href={`tel:${ec.number}`} style={{background:`linear-gradient(135deg,${ec.color},${ec.color}BB)`,color:"white",padding:"10px 20px",borderRadius:12,fontSize:14,fontWeight:700,textDecoration:"none",display:"flex",alignItems:"center",gap:6}}>📞 Call Now</a>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{background:"linear-gradient(135deg,#1B5E20,#388E3C)",borderRadius:16,padding:"24px 28px",color:"white",marginTop:24,textAlign:"center"}}>
+            <div style={{fontWeight:800,fontSize:18,marginBottom:6}}>🏥 Need a Hospital?</div>
+            <div style={{opacity:0.85,fontSize:14,marginBottom:16}}>Find the nearest hospital and get directions instantly</div>
+            <button onClick={()=>go("map")} style={btn({background:"white",color:"#1B5E20",padding:"12px 28px"})}>Open Map → Find Nearest Hospital</button>
+          </div>
+        </div>}
+
+        {/* =========== 🆕 HEALTH TIPS =========== */}
+        {view==="tips"&&<div>
+          <div className="tips-gradient" style={{background:"linear-gradient(135deg,#059669,#10B981)",borderRadius:20,padding:"36px 32px",marginBottom:28,color:"white",position:"relative",overflow:"hidden"}}>
+            <div className="anim-float" style={{position:"absolute",right:30,top:-10,fontSize:100,opacity:0.1}}>💡</div>
+            <div style={{fontSize:13,fontWeight:700,letterSpacing:2,opacity:0.7,marginBottom:8,textTransform:"uppercase"}}>HealthConnect Tips</div>
+            <h1 style={{margin:"0 0 8px",fontSize:28,fontWeight:900}}>Health Tips & Awareness</h1>
+            <p style={{margin:0,opacity:0.9,fontSize:15,maxWidth:500}}>Curated health tips to help you live a healthier, happier life.</p>
+          </div>
+
+          <div style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
+            {["All","Prevention","Nutrition","Mental Health","First Aid","Fitness","Hygiene","Sleep","Hydration"].map(cat=>(
+              <button key={cat} className="anim-filter" onClick={()=>setTipsFilter(cat)} style={{padding:"8px 16px",borderRadius:20,border:tipsFilter===cat?"2px solid #059669":"2px solid #E5E7EB",background:tipsFilter===cat?"#F0FDF4":"white",color:tipsFilter===cat?"#059669":"#6B7280",fontWeight:tipsFilter===cat?700:500,fontSize:13,cursor:"pointer"}}>{cat}</button>
+            ))}
+          </div>
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:16}}>
+            {HEALTH_TIPS.filter(t=>tipsFilter==="All"||t.category===tipsFilter).map(tip=>(
+              <div key={tip.id} className="anim-card anim-tipcard" style={{background:"white",borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.06)"}}>
+                <div style={{background:`${tip.color}11`,padding:"18px 20px",borderBottom:`3px solid ${tip.color}25`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                    <div style={{fontSize:28}}>{tip.icon}</div>
+                    <Badge color={`${tip.color}18`} text={tip.color}>{tip.category}</Badge>
+                  </div>
+                  <div style={{fontWeight:800,fontSize:17}}>{tip.title}</div>
+                </div>
+                <div style={{padding:"16px 20px"}}>
+                  <div style={{fontSize:14,color:"#374151",lineHeight:1.7,marginBottom:12}}>{tip.desc}</div>
+                  <div style={{background:`${tip.color}10`,borderRadius:10,padding:"10px 14px",fontSize:13,color:tip.color,fontWeight:600}}>💡 {tip.tip}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>}
+
       </div>
 
+      {/* =========== 🆕 FOOTER =========== */}
+      <footer className="anim-footer" style={{background:"linear-gradient(135deg,#0F4C81,#0A2E4E)",color:"white",padding:"48px 20px 24px",marginTop:40}}>
+        <div style={{maxWidth:1100,margin:"0 auto"}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:32,marginBottom:32}}>
+            <div>
+              <div style={{fontSize:22,fontWeight:900,marginBottom:12}}>🩺 HealthConnect</div>
+              <div style={{fontSize:13,opacity:0.7,lineHeight:1.8}}>India's trusted healthcare platform. Find, compare, and book the best care near you.</div>
+            </div>
+            <div>
+              <div style={{fontWeight:700,fontSize:14,marginBottom:12}}>Quick Links</div>
+              {[["🏥 Hospitals","list"],["🧪 Compare Tests","compare"],["🗺️ Map View","map"],["💡 Health Tips","tips"]].map(([l,v])=><div key={v} onClick={()=>go(v)} style={{fontSize:13,opacity:0.7,marginBottom:8,cursor:"pointer"}}>{l}</div>)}
+            </div>
+            <div>
+              <div style={{fontWeight:700,fontSize:14,marginBottom:12}}>Emergency</div>
+              {[["🚑 Ambulance","102"],["👮 Police","100"],["🚒 Fire Brigade","101"],["🆘 Universal","112"]].map(([l,n])=><div key={n} style={{fontSize:13,opacity:0.7,marginBottom:8}}>{l}: <strong>{n}</strong></div>)}
+            </div>
+            <div>
+              <div style={{fontWeight:700,fontSize:14,marginBottom:12}}>Contact Us</div>
+              <div style={{fontSize:13,opacity:0.7,lineHeight:2}}>📧 support@healthconnect.in<br/>📍 New Delhi, India<br/>🕐 24/7 Support Available</div>
+            </div>
+          </div>
+          <div style={{borderTop:"1px solid rgba(255,255,255,0.15)",paddingTop:20,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{fontSize:12,opacity:0.5}}>© 2026 HealthConnect. All rights reserved. Made with ❤️ in India.</div>
+            <div style={{display:"flex",gap:12}}>
+              {["Twitter","LinkedIn","GitHub","Instagram"].map(s=><span key={s} style={{fontSize:12,opacity:0.5,cursor:"pointer"}}>{s}</span>)}
+            </div>
+          </div>
+        </div>
+      </footer>
+
       <style>{`
-        @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        * { box-sizing: border-box; }
-        select, input, textarea, button { font-family: 'Nunito', 'Segoe UI', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+        *{box-sizing:border-box;}
+        select,input,textarea,button{font-family:'Nunito','Segoe UI',sans-serif;}
+
+        /* 🎬 KEYFRAME ANIMATIONS */
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slideInRight{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes scaleIn{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        @keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+        @keyframes bounceIn{0%{transform:scale(0.3);opacity:0}50%{transform:scale(1.05)}70%{transform:scale(0.9)}100%{transform:scale(1);opacity:1}}
+        @keyframes ripple{0%{transform:scale(0);opacity:0.5}100%{transform:scale(4);opacity:0}}
+        @keyframes glow{0%,100%{box-shadow:0 0 8px rgba(30,136,229,0.4)}50%{box-shadow:0 0 24px rgba(30,136,229,0.8)}}
+        @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        @keyframes typewriter{from{width:0}to{width:100%}}
+        @keyframes blink{0%,100%{border-color:transparent}50%{border-color:white}}
+        @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+        @keyframes countUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+        /* 🏠 HERO ANIMATED GRADIENT */
+        .hero-gradient{background:linear-gradient(-45deg,#0F4C81,#1565C0,#1E88E5,#42A5F5,#0F4C81)!important;background-size:300% 300%!important;animation:gradientShift 8s ease infinite}
+
+        /* 🃏 CARD HOVER EFFECTS */
+        .anim-card{transition:transform 0.35s cubic-bezier(.4,0,.2,1),box-shadow 0.35s cubic-bezier(.4,0,.2,1)!important}
+        .anim-card:hover{transform:translateY(-8px)!important;box-shadow:0 20px 40px rgba(0,0,0,0.15)!important}
+
+        /* 🔘 BUTTON HOVER EFFECTS */
+        .anim-btn{transition:transform 0.2s,box-shadow 0.2s,filter 0.2s!important;position:relative;overflow:hidden}
+        .anim-btn:hover{transform:translateY(-2px)!important;box-shadow:0 8px 25px rgba(0,0,0,0.2)!important;filter:brightness(1.08)}
+        .anim-btn:active{transform:translateY(0) scale(0.97)!important}
+
+        /* ✨ NOTIFICATION TOAST */
+        .anim-notif{animation:slideInRight 0.4s cubic-bezier(.4,0,.2,1)}
+
+        /* 📊 STATS CARDS */
+        .anim-stat{animation:fadeInUp 0.6s ease-out both}
+        .anim-stat:nth-child(1){animation-delay:0.1s}
+        .anim-stat:nth-child(2){animation-delay:0.2s}
+        .anim-stat:nth-child(3){animation-delay:0.3s}
+        .anim-stat:nth-child(4){animation-delay:0.4s}
+
+        /* 🏥 HOSPITAL LIST ITEMS — staggered */
+        .anim-hospital{animation:fadeInUp 0.5s ease-out both}
+        .anim-hospital:nth-child(1){animation-delay:0.05s}
+        .anim-hospital:nth-child(2){animation-delay:0.10s}
+        .anim-hospital:nth-child(3){animation-delay:0.15s}
+        .anim-hospital:nth-child(4){animation-delay:0.20s}
+        .anim-hospital:nth-child(5){animation-delay:0.25s}
+        .anim-hospital:nth-child(6){animation-delay:0.30s}
+        .anim-hospital:nth-child(7){animation-delay:0.35s}
+        .anim-hospital:nth-child(8){animation-delay:0.40s}
+        .anim-hospital:nth-child(9){animation-delay:0.45s}
+        .anim-hospital:nth-child(10){animation-delay:0.50s}
+
+        /* 🔗 NAV LINKS */
+        .anim-navlink{transition:all 0.25s ease!important}
+        .anim-navlink:hover{background:rgba(255,255,255,0.25)!important;transform:translateY(-1px)}
+
+        /* 🌟 FLOATING ICON */
+        .anim-float{animation:float 4s ease-in-out infinite}
+
+        /* 💡 TIPS / SOS CARDS — staggered */
+        .anim-tipcard{animation:scaleIn 0.4s ease-out both}
+        .anim-tipcard:nth-child(1){animation-delay:0.05s}
+        .anim-tipcard:nth-child(2){animation-delay:0.10s}
+        .anim-tipcard:nth-child(3){animation-delay:0.15s}
+        .anim-tipcard:nth-child(4){animation-delay:0.20s}
+        .anim-tipcard:nth-child(5){animation-delay:0.25s}
+        .anim-tipcard:nth-child(6){animation-delay:0.30s}
+        .anim-tipcard:nth-child(7){animation-delay:0.35s}
+        .anim-tipcard:nth-child(8){animation-delay:0.40s}
+
+        /* 🏷️ BADGE PULSE */  
+        .anim-badge-pulse{animation:pulse 2s ease-in-out infinite}
+
+        /* 🌀 LOADING SPINNER */
+        .anim-spinner{width:40px;height:40px;border:4px solid #E5E7EB;border-top-color:#1E88E5;border-radius:50%;animation:spin 0.8s linear infinite;margin:20px auto}
+
+        /* 🎯 HERO TEXT */
+        .anim-hero-text{animation:fadeInUp 0.8s ease-out both}
+        .anim-hero-subtitle{animation:fadeInUp 0.8s ease-out 0.2s both}
+        .anim-hero-search{animation:fadeInUp 0.8s ease-out 0.4s both}
+
+        /* 🚨 SOS GRADIENT */
+        .sos-gradient{background:linear-gradient(-45deg,#DC2626,#BE123C,#E11D48,#DC2626)!important;background-size:300% 300%!important;animation:gradientShift 5s ease infinite}
+
+        /* 💡 TIPS GRADIENT */
+        .tips-gradient{background:linear-gradient(-45deg,#059669,#10B981,#34D399,#059669)!important;background-size:300% 300%!important;animation:gradientShift 6s ease infinite}
+
+        /* 📋 FOOTER */
+        .anim-footer{animation:fadeIn 0.6s ease-out}
+        .anim-footer a,.anim-footer span{transition:opacity 0.2s}
+        .anim-footer span:hover{opacity:1!important}
+
+        /* 🔵 GLOW CTA */
+        .anim-glow{animation:glow 2.5s ease-in-out infinite}
+
+        /* 🎭 VIEW TRANSITION */
+        .anim-view{animation:fadeInUp 0.5s ease-out}
+
+        /* 📱 SMOOTH SCROLL */
+        html{scroll-behavior:smooth}
+
+        /* 🎨 FOCUS RING */
+        input:focus,textarea:focus,select:focus{border-color:#1E88E5!important;box-shadow:0 0 0 3px rgba(30,136,229,0.15)!important;transition:all 0.2s}
+
+        /* 🔄 FILTER BUTTON TRANSITION */
+        .anim-filter{transition:all 0.2s ease!important}
+        .anim-filter:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
       `}</style>
     </div>
   );

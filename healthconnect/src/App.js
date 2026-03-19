@@ -39,6 +39,20 @@ const ALL_TESTS = ["Blood Test (CBC)","MRI Brain","CT Scan Chest","ECG","X-Ray",
 const SPECIALITIES = ["All","Cardiology","Neurology","Orthopedics","Oncology","Pediatrics","Gastroenterology","Nephrology","General Medicine","Emergency","Surgery"];
 const TIME_SLOTS = ["9:00 AM","9:30 AM","10:00 AM","10:30 AM","11:00 AM","2:00 PM","2:30 PM","3:00 PM","3:30 PM","4:00 PM"];
 
+// Fallback doctor data when backend is unreachable
+const DOCTORS_DB_FALLBACK = [
+  { id: 1, name: "Dr. Priya Sharma", spec: "Cardiology", exp: 15, fee: 800, available: "Today", rating: 4.8, img: "👩‍⚕️", bio: "Senior Cardiologist with 15+ years of experience in interventional cardiology and heart failure management.", qualifications: "MD, DM (Cardiology), FACC", slots: ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM"] },
+  { id: 2, name: "Dr. Rajesh Kumar", spec: "Orthopedics", exp: 12, fee: 700, available: "Today", rating: 4.6, img: "👨‍⚕️", bio: "Expert orthopedic surgeon specializing in joint replacement, sports injuries, and trauma care.", qualifications: "MS (Ortho), DNB, Fellowship in Joint Replacement", slots: ["9:30 AM","10:30 AM","2:30 PM","3:30 PM","4:00 PM"] },
+  { id: 3, name: "Dr. Anita Desai", spec: "Neurology", exp: 18, fee: 1000, available: "Tomorrow", rating: 4.9, img: "👩‍⚕️", bio: "Head of Neurology with expertise in stroke management, epilepsy treatment, and neurological disorders.", qualifications: "MD, DM (Neurology), FIAN", slots: ["10:00 AM","11:00 AM","2:00 PM","4:00 PM"] },
+  { id: 4, name: "Dr. Vikram Singh", spec: "General Medicine", exp: 8, fee: 500, available: "Today", rating: 4.5, img: "👨‍⚕️", bio: "Dedicated general physician with a patient-first approach. Expert in managing chronic diseases and preventive care.", qualifications: "MD (Internal Medicine)", slots: ["9:00 AM","9:30 AM","10:00 AM","10:30 AM","11:00 AM","2:00 PM","2:30 PM","3:00 PM"] },
+  { id: 5, name: "Dr. Meera Patel", spec: "Pediatrics", exp: 10, fee: 600, available: "Today", rating: 4.7, img: "👩‍⚕️", bio: "Compassionate pediatrician specializing in child development, vaccinations, and newborn care.", qualifications: "MD (Pediatrics), IAP Fellowship", slots: ["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"] },
+  { id: 6, name: "Dr. Arjun Nair", spec: "Gastroenterology", exp: 14, fee: 900, available: "Tomorrow", rating: 4.4, img: "👨‍⚕️", bio: "Expert in digestive health, liver diseases, and advanced endoscopy procedures.", qualifications: "MD, DM (Gastroenterology)", slots: ["10:00 AM","11:00 AM","2:30 PM","3:30 PM"] },
+  { id: 7, name: "Dr. Sunita Reddy", spec: "Oncology", exp: 20, fee: 1200, available: "Today", rating: 4.9, img: "👩‍⚕️", bio: "Leading oncologist with 20+ years in cancer treatment. Pioneer in targeted therapy and immunotherapy.", qualifications: "MD, DM (Medical Oncology), ESMO", slots: ["9:30 AM","10:30 AM","2:00 PM"] },
+  { id: 8, name: "Dr. Amit Joshi", spec: "Nephrology", exp: 11, fee: 750, available: "Today", rating: 4.3, img: "👨‍⚕️", bio: "Nephrologist specializing in kidney transplant, dialysis management, and chronic kidney disease.", qualifications: "MD, DM (Nephrology)", slots: ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"] },
+  { id: 9, name: "Dr. Kavita Menon", spec: "Emergency", exp: 9, fee: 500, available: "Today", rating: 4.6, img: "👩‍⚕️", bio: "Emergency medicine specialist trained in trauma care, critical care, and disaster management.", qualifications: "MD (Emergency Medicine), ACLS", slots: ["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"] },
+  { id: 10, name: "Dr. Sanjay Gupta", spec: "Surgery", exp: 22, fee: 1500, available: "Tomorrow", rating: 4.8, img: "👨‍⚕️", bio: "Chief Surgeon with expertise in minimally invasive surgery, laparoscopic procedures, and surgical oncology.", qualifications: "MS (Surgery), MCh, FACS", slots: ["10:00 AM","11:00 AM","2:00 PM"] },
+];
+
 // 🏥 Health Tips Data
 const HEALTH_TIPS = [
   { id: 1, category: "Prevention", icon: "🛡️", color: "#059669", title: "Regular Health Checkups", desc: "Get a full body checkup at least once a year. Early detection can prevent serious health issues. Blood tests, ECG, and basic screenings should be part of your annual routine.", tip: "Schedule your next checkup today!" },
@@ -371,6 +385,11 @@ export default function App(){
   const [tipsFilter,setTipsFilter]=useState("All");
   const [cityInput,setCityInput]=useState("New Delhi");
 
+  // 👨‍⚕️ All Doctors state
+  const [allDoctors,setAllDoctors]=useState([]);
+  const [loadingAllDocs,setLoadingAllDocs]=useState(false);
+  const [docSpecFilter,setDocSpecFilter]=useState("All");
+
   // 🏥 Real hospital data from backend
   const [hospitals, setHospitals] = useState([]);
   const [loadingHospitals, setLoadingHospitals] = useState(false);
@@ -480,6 +499,28 @@ export default function App(){
     return ms&&mf;
   }).sort((a,b)=>sortBy==="rating"?b.rating-a.rating:b.reviews-a.reviews);
 
+  // 🆕 Fetch all doctors (for standalone page)
+  const fetchAllDoctors = async () => {
+    setLoadingAllDocs(true);
+    try {
+      // Fetch doctors for multiple hospital IDs to get variety
+      const allDocs = [];
+      for (let hid = 1; hid <= 3; hid++) {
+        const res = await fetch(`${API_URL}/doctors?hospitalId=${hid}`);
+        const data = await res.json();
+        if (data.success) {
+          data.doctors.forEach(d => {
+            if (!allDocs.find(x => x.name === d.name)) allDocs.push(d);
+          });
+        }
+      }
+      setAllDoctors(allDocs.length > 0 ? allDocs : DOCTORS_DB_FALLBACK);
+    } catch {
+      setAllDoctors(DOCTORS_DB_FALLBACK);
+    }
+    setLoadingAllDocs(false);
+  };
+
   const go = async (v, h = null, doc = null) => {
     setView(v);
     if (h) {
@@ -490,6 +531,7 @@ export default function App(){
     if (doc) setSelectedDoctor(doc);
     if (v === "detail" && h) fetchReviews(h.id);
     if (v === "appointments") fetchMyAppointments();
+    if (v === "allDoctors") fetchAllDoctors();
   };
   const notifShow=(m)=>{setNotif(m);setTimeout(()=>setNotif(null),3000);};
   const toggleTest=(t)=>setSelectedTests(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
@@ -533,7 +575,7 @@ export default function App(){
         <div style={{maxWidth:1100,margin:"0 auto",display:"flex",alignItems:"center",gap:16,height:60}}>
           <div style={{color:"white",fontWeight:900,fontSize:20,cursor:"pointer"}} onClick={()=>go("home")}>🩺 HealthConnect</div>
           <div style={{flex:1}}/>
-          {[["Hospitals","list"],["Compare","compare"],["🗺️ Map","map"],["🚨 SOS","emergency"],["💡 Tips","tips"],...(user?[["📋 My Appts","appointments"]]:[])]  .map(([l,v])=><span key={v} className="anim-navlink" onClick={()=>go(v)} style={{color:"white",fontSize:13,cursor:"pointer",fontWeight:600,padding:"6px 10px",borderRadius:8,background:view===v?"rgba(255,255,255,0.2)":"transparent"}}>{l}</span>)}
+          {[["Hospitals","list"],["👨‍⚕️ Doctors","allDoctors"],["Compare","compare"],["🗺️ Map","map"],["🚨 SOS","emergency"],["💡 Tips","tips"],...(user?[["📋 My Appts","appointments"]]:[])]  .map(([l,v])=><span key={v} className="anim-navlink" onClick={()=>go(v)} style={{color:"white",fontSize:13,cursor:"pointer",fontWeight:600,padding:"6px 10px",borderRadius:8,background:view===v?"rgba(255,255,255,0.2)":"transparent"}}>{l}</span>)}
           {/* 🌙 Dark Mode Toggle */}
           <button onClick={()=>setDarkMode(!dm)} style={{background:dm?"rgba(255,255,255,0.15)":"rgba(0,0,0,0.15)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:20,padding:"6px 12px",color:"white",cursor:"pointer",fontSize:16,fontWeight:600,transition:"all 0.3s"}} title={dm?"Switch to Light Mode":"Switch to Dark Mode"}>{dm?"☀️":"🌙"}</button>
           {user ? (
@@ -855,6 +897,60 @@ export default function App(){
             <div style={{opacity:0.85,fontSize:14,marginBottom:16}}>Find the nearest hospital and get directions instantly</div>
             <button onClick={()=>go("map")} style={btn({background:"white",color:"#1B5E20",padding:"12px 28px"})}>Open Map → Find Nearest Hospital</button>
           </div>
+        </div>}
+
+        {/* =========== 🆕 ALL DOCTORS =========== */}
+        {view==="allDoctors"&&<div>
+          <div className="hero-gradient" style={{background:"linear-gradient(135deg,#1565C0,#0F4C81,#42A5F5)",borderRadius:20,padding:"36px 32px",marginBottom:28,color:"white",position:"relative",overflow:"hidden"}}>
+            <div className="anim-float" style={{position:"absolute",right:30,top:-10,fontSize:100,opacity:0.08}}>👨‍⚕️</div>
+            <div style={{fontSize:13,fontWeight:700,letterSpacing:2,opacity:0.7,marginBottom:8,textTransform:"uppercase"}}>HealthConnect Doctors</div>
+            <h1 style={{margin:"0 0 8px",fontSize:28,fontWeight:900}}>Our Medical Experts</h1>
+            <p style={{margin:0,opacity:0.9,fontSize:15,maxWidth:500}}>Browse our panel of experienced doctors across all specialities. View profiles and book appointments instantly.</p>
+          </div>
+
+          {/* Speciality Filter */}
+          <div style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
+            {SPECIALITIES.map(sp=>(
+              <button key={sp} className="anim-filter" onClick={()=>setDocSpecFilter(sp)} style={{padding:"8px 16px",borderRadius:20,border:docSpecFilter===sp?"2px solid #1E88E5":`2px solid ${theme.inputBorder}`,background:docSpecFilter===sp?(dm?"#1E3A5F":"#EFF6FF"):theme.card,color:docSpecFilter===sp?"#1E88E5":theme.muted,fontWeight:docSpecFilter===sp?700:500,fontSize:13,cursor:"pointer"}}>{sp}</button>
+            ))}
+          </div>
+
+          {loadingAllDocs&&<div style={{textAlign:"center",padding:"60px",background:theme.card,borderRadius:16}}><div className="anim-spinner"></div><div style={{fontWeight:700,color:"#0F4C81",marginTop:8}}>Loading doctors...</div></div>}
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:16}}>
+            {allDoctors.filter(d=>docSpecFilter==="All"||d.spec===docSpecFilter).map((doc,i)=>(
+              <div key={doc.id+"-"+i} className="anim-card anim-tipcard" style={{...card,cursor:"default"}}>
+                <div style={{background:`linear-gradient(135deg,${COLORS[i%COLORS.length]}15,${COLORS[i%COLORS.length]}08)`,padding:"20px 22px",borderBottom:`3px solid ${COLORS[i%COLORS.length]}25`}}>
+                  <div style={{display:"flex",gap:16,alignItems:"center"}}>
+                    <div onClick={()=>go("doctorProfile",null,doc)} style={{width:60,height:60,borderRadius:"50%",background:`${COLORS[i%COLORS.length]}20`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:30,flexShrink:0,cursor:"pointer",border:`2px solid ${COLORS[i%COLORS.length]}40`,transition:"transform 0.2s"}} onMouseEnter={e=>e.currentTarget.style.transform="scale(1.1)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}>👨‍⚕️</div>
+                    <div style={{flex:1}}>
+                      <div onClick={()=>go("doctorProfile",null,doc)} style={{fontWeight:800,fontSize:17,marginBottom:4,cursor:"pointer",color:dm?"#60A5FA":"#0F4C81"}}>{doc.name}</div>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        <Badge color={`${COLORS[i%COLORS.length]}18`} text={COLORS[i%COLORS.length]}>{doc.spec}</Badge>
+                        <Badge color={dm?"#1E293B":"#FFFBEB"} text="#92400E">{doc.exp} yrs exp</Badge>
+                        <Badge color={doc.available==="Today"?(dm?"#064E3B":"#F0FDF4"):dm?"#1E293B":"#FFF7ED"} text={doc.available==="Today"?"#15803D":"#92400E"}>{doc.available==="Today"?"✅":"📅"} {doc.available}</Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div style={{padding:"16px 22px"}}>
+                  <div style={{fontSize:13,color:theme.muted,lineHeight:1.7,marginBottom:12,display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden"}}>{doc.bio||"Experienced medical professional providing quality patient care."}</div>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <div>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}><Star rating={doc.rating}/><span style={{fontWeight:700,fontSize:13}}>{doc.rating}/5</span></div>
+                      <div style={{fontSize:20,fontWeight:900,color:dm?"#60A5FA":"#0F4C81",marginTop:4}}>₹{doc.fee}</div>
+                    </div>
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={()=>go("doctorProfile",null,doc)} style={btn({background:dm?"#334155":"#F1F5F9",color:dm?"#60A5FA":"#0F4C81",border:`1px solid ${theme.inputBorder}`,padding:"8px 14px",fontSize:12})}>View Profile</button>
+                      <button onClick={()=>handleBookClick(doc)} style={btn({background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white",padding:"8px 16px",fontSize:12})}>{user?"📅 Book":"🔐 Login"}</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {!loadingAllDocs&&allDoctors.filter(d=>docSpecFilter==="All"||d.spec===docSpecFilter).length===0&&<div style={{textAlign:"center",padding:"60px",background:theme.card,borderRadius:16,color:theme.muted}}><div style={{fontSize:48,marginBottom:12}}>🔍</div><div style={{fontSize:18,fontWeight:700}}>No doctors found for this speciality</div></div>}
         </div>}
 
         {/* =========== 🆕 HEALTH TIPS =========== */}

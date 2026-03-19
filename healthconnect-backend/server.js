@@ -21,7 +21,16 @@ const Review = require("./models/Review");
 const Payment = require("./models/Payment");
 
 const app = express();
-app.use(cors());
+
+// ✅ CORS — allow Vercel frontend + localhost
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://healthconnect-frontend.vercel.app",
+    /\.vercel\.app$/,  // allow all Vercel preview URLs
+  ],
+  credentials: true,
+}));
 app.use(express.json());
 
 const RAPIDAPI_KEY = process.env.GOOGLE_PLACES_API_KEY;
@@ -349,7 +358,7 @@ app.post("/payment", async (req, res) => {
 // 🚀 START SERVER
 // ========================================
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`\n✅ HealthConnect Backend v2.0 running on http://localhost:${PORT}`);
   console.log(`📋 Endpoints available:`);
   console.log(`   GET  /                          — Health check`);

@@ -81,6 +81,43 @@
 | **APIs** | Google Places via RapidAPI |
 | **Deployment** | Vercel (frontend), Render (backend) |
 
+## 🏗 Architecture
+
+```mermaid
+graph TB
+    subgraph Frontend ["🖥️ React Frontend (Vercel)"]
+        A[App.js - SPA] --> B[Firebase Auth]
+        A --> C[Leaflet Maps]
+        A --> D[API Calls]
+    end
+
+    subgraph Backend ["⚙️ Express Backend (Render.com)"]
+        E[server.js] --> F["/hospitals"]
+        E --> G["/doctors"]
+        E --> H["/appointments"]
+        E --> I["/reviews"]
+        E --> J["/payment"]
+    end
+
+    subgraph Database ["🗄️ MongoDB Atlas"]
+        K[(Appointments)]
+        L[(Reviews)]
+        M[(Payments)]
+    end
+
+    subgraph External ["🌐 External APIs"]
+        N[Google Places - RapidAPI]
+        O[Firebase Auth]
+    end
+
+    D -->|REST API| E
+    F -->|Search| N
+    H --> K
+    I --> L
+    J --> M
+    B --> O
+```
+
 ---
 
 ## 📁 Project Structure

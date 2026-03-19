@@ -1,2 +1,24 @@
-node_modules/ 
-.vscode/ 
+# Dependencies
+node_modules/
+
+# Environment variables (secrets)
+.env
+
+# Build output
+build/
+dist/
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Vercel
+.vercel/

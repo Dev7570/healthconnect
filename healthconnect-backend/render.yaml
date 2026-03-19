@@ -1,0 +1,23 @@
+# ============================================
+#  Render.com Blueprint — HealthConnect Backend
+# ============================================
+# This file enables one-click deployment on Render.com
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: healthconnect-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false  # Must be set manually in Render dashboard
+      - key: MONGODB_URI
+        sync: false  # Must be set manually in Render dashboard

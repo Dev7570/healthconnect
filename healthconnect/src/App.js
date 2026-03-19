@@ -30,7 +30,7 @@ L.Icon.Default.mergeOptions({
 // 🌐 API URL — auto-detect local vs deployed
 const API_URL = window.location.hostname === "localhost"
   ? "http://localhost:5000"
-  : "https://healthconnect-backend-api.onrender.com";
+  : "https://healthconnect-backend-dev-7570.onrender.com";
 
 // 🎨 Color palette for hospitals
 const COLORS = ["#0066CC","#E8432D","#00A651","#6B21A8","#F59E0B","#0F766E","#DC2626","#7C3AED","#059669","#D97706"];

@@ -1,6 +1,6 @@
-# 🩺 HealthConnect — India's Healthcare Platform
+# 🩺 HealthConnect — Comprehensive Healthcare Platform
 
-> A full-stack healthcare web application for finding real hospitals, booking doctor appointments, comparing test prices, and accessing emergency services.
+> A full-stack MERN healthcare web application for finding real hospitals, booking doctor appointments, comparing test prices, and accessing emergency services. Built as a comprehensive academic project submission.
 
 ![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
@@ -9,92 +9,92 @@
 
 ---
 
+## 🌐 Live Project Links
+
+- **Live Web Application (Frontend)**: [https://healthconnect-snowy.vercel.app](https://healthconnect-snowy.vercel.app)
+- **Backend API Server**: [https://healthconnect-backend-dev-7570-uniquehealthconnect-backend-api.onrender.com](https://healthconnect-backend-dev-7570-uniquehealthconnect-backend-api.onrender.com)
+
+---
+
 ## 📋 Table of Contents
 
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
+- [Core Features](#-core-features)
+- [Technology Stack](#-technology-stack)
+- [System Architecture](#-system-architecture)
 - [Project Structure](#-project-structure)
 - [Setup & Installation](#-setup--installation)
 - [API Documentation](#-api-documentation)
-- [Deployment](#-deployment)
-- [Screenshots](#-screenshots)
+- [Deployment Strategy](#-deployment-strategy)
 - [Credits](#-credits)
 
 ---
 
-## ✨ Features
+## ✨ Core Features
 
-### 🏥 Hospital Search (Real Data)
-- Search hospitals in **any Indian city** using real Google Places data
-- View real ratings, reviews, phone numbers, and opening hours
-- Interactive **Leaflet map** with markers and directions
+### 🏥 Hospital Search (Real-Time Data)
+- Dynamically search hospitals in **any Indian city** utilizing the real Google Places API.
+- View accurate ratings, reviews, international phone numbers, and operational hours.
+- Interactive **Leaflet map** integration featuring geospatial markers and direct routing.
 
-### 👨‍⚕️ Doctor Booking
-- Browse doctors by hospital with speciality filters
-- **4-step booking flow**: Date/Time → Patient Details → Review → Payment
-- Payment via **UPI, Credit Card, or Net Banking**
-- SMS notification support (phone number capture)
+### 👨‍⚕️ Comprehensive Doctor Booking & Payments
+- Browse specialist doctors associated with chosen hospitals.
+- **Advanced 4-step booking flow**: Slot Selection → Patient Details (with 10-digit validation) → Review → Payment.
+- **Dynamic Payment Status**: Appointments initially register as "Pending" (📅) and automatically upgrade to "Confirmed" (✅) upon successful simulated payment (UPI, Credit Card, or Net Banking).
+- Automated SMS notification UI simulations.
 
 ### 👨‍⚕️ Doctor Profiles
-- Detailed doctor profile pages with bio, qualifications, experience
-- Available time slots and consultation fees
-- Direct booking from profile page
+- Detailed doctor profile pages with bio, qualifications, and years of experience.
+- Real-time availability tracking and consultation fee transparency.
+- Direct seamless booking directly from the profile page.
 
-### 🌙 Dark Mode
-- Full dark theme toggle with smooth transitions
-- Preference persisted in localStorage
-- Consistent dark styling across all components
+### 🌙 Dark Mode & Responsive UI
+- Full dark theme toggle capability with persistent `localStorage` memory.
+- Modern glassmorphism UI elements, smooth CSS transitions, and micro-animations.
+- Fully responsive design optimized for mobile, tablet, and desktop viewports.
 
-### 🧪 Test Price Comparison
-- Compare prices of medical tests (CBC, MRI, ECG, X-Ray, etc.) across hospitals
-- Color-coded cheapest/most expensive indicators
+### 🧪 Test Price Comparison Engine
+- Compare prices of critical diagnostic tests (CBC, MRI, ECG, X-Ray, etc.) across multiple hospitals simultaneously.
+- Automated color-coded visual indicators for the cheapest and most expensive options to aid decision-making.
 
-### 🚨 Emergency SOS
-- One-tap calling for Ambulance (102), Police (100), Fire (101)
-- Mental health helpline, child helpline, women helpline
-- Quick access to nearest hospital via map
+### 🚨 Emergency SOS & Health Tips
+- **SOS Dashboard**: One-tap rapid calling for Ambulance (102), Police (100), Fire (101), and mental health helplines.
+- **Health Tips Engine**: Curated health and wellness tips across categories like Prevention, Nutrition, Mental Health, Fitness, and Hydration.
 
-### 💡 Health Tips
-- Curated health tips across categories: Prevention, Nutrition, Mental Health, Fitness, Sleep, Hydration
-- Category-based filtering
-
-### 🔐 User Authentication (Firebase)
-- Email/password sign up and login
-- Profile display in navbar
-- Protected booking and appointment management
-
-### 📋 Appointment Management
-- View all booked appointments with status
-- Cancel appointments
-- Payment status tracking
+### 🔐 Secure User Authentication
+- Firebase-backed Email/Password authentication system.
+- Protected routes for booking appointments and managing profiles.
+- Persistent user sessions.
 
 ---
 
-## 🛠 Tech Stack
+## 🛠 Technology Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 18, Leaflet.js, CSS-in-JS |
-| **Backend** | Node.js, Express 5 |
-| **Database** | MongoDB with Mongoose ODM |
-| **Auth** | Firebase Authentication |
-| **APIs** | Google Places via RapidAPI |
-| **Deployment** | Vercel (frontend), Render (backend) |
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Frontend** | React 18, HTML5, CSS3 | Single Page Application (SPA), UI rendering |
+| **Backend** | Node.js, Express 5 | RESTful API creation, strict routing |
+| **Database** | MongoDB & Mongoose | Persistent NoSQL data storage |
+| **Auth** | Firebase Authentication | Secure user credential management |
+| **Geospatial** | React-Leaflet & OpenStreetMap | Mapping and location plotting |
+| **External APIs**| Google Places (RapidAPI) | Fetching real hospital data dynamically |
+| **Deployment** | Vercel & Render.com | Cloud hosting and continuous integration |
 
-## 🏗 Architecture
+---
+
+## 🏗 System Architecture
 
 ```mermaid
 graph TB
     subgraph Frontend ["🖥️ React Frontend (Vercel)"]
         A[App.js - SPA] --> B[Firebase Auth]
         A --> C[Leaflet Maps]
-        A --> D[API Calls]
+        A --> D[API Service Layer]
     end
 
-    subgraph Backend ["⚙️ Express Backend (Render.com)"]
-        E[server.js] --> F["/hospitals"]
+    subgraph Backend ["⚙️ Node.js/Express Backend (Render)"]
+        E[server.js] --> F["/hospitals (Google API Proxy)"]
         E --> G["/doctors"]
-        E --> H["/appointments"]
+        E --> H["/appointments (Pending/Confirmed logic)"]
         E --> I["/reviews"]
         E --> J["/payment"]
     end
@@ -105,13 +105,13 @@ graph TB
         M[(Payments)]
     end
 
-    subgraph External ["🌐 External APIs"]
-        N[Google Places - RapidAPI]
+    subgraph External ["🌐 External Cloud Services"]
+        N[Google Places API]
         O[Firebase Auth]
     end
 
-    D -->|REST API| E
-    F -->|Search| N
+    D -->|REST Requests| E
+    F -->|Geospatial Queries| N
     H --> K
     I --> L
     J --> M
@@ -122,40 +122,41 @@ graph TB
 
 ## 📁 Project Structure
 
-```
-project 2/
-├── healthconnect/                  # React Frontend
+```text
+project/
+├── healthconnect/                  # 🖥️ React Frontend
 │   ├── public/
 │   │   └── index.html
 │   ├── src/
-│   │   ├── App.js                  # Main application (all views)
-│   │   ├── App.css                 # Default styles
-│   │   ├── firebase.js             # Firebase config
-│   │   ├── index.js                # Entry point
-│   │   └── index.css               # Global styles
+│   │   ├── App.js                  # Main application routing and core logic
+│   │   ├── App.css                 # Default specific styles
+│   │   ├── firebase.js             # Firebase initialization config
+│   │   ├── index.js                # React DOM entry point
+│   │   └── index.css               # Global theme variables & Dark Mode styling
 │   ├── package.json
-│   └── .env                        # Frontend env vars
+│   ├── vercel.json                 # Vercel CI deployment overrides
+│   └── .env                        # Frontend environment variables
 │
-├── healthconnect-backend/          # Node.js Backend
+├── healthconnect-backend/          # ⚙️ Node.js REST API
 │   ├── models/
-│   │   ├── Appointment.js          # Appointment schema
-│   │   ├── Review.js               # Review schema
-│   │   └── Payment.js              # Payment schema
-│   ├── server.js                   # Express server + all routes
+│   │   ├── Appointment.js          # Mongoose schema for Bookings
+│   │   ├── Review.js               # Mongoose schema for User Reviews
+│   │   └── Payment.js              # Mongoose schema for Transactions
+│   ├── server.js                   # Express server + API Routes
 │   ├── package.json
-│   └── .env                        # Backend env vars (API keys, MongoDB URI)
+│   └── .env                        # Backend environment variables
 │
-└── README.md                       # This file
+└── README.md                       # Comprehensive Project Documentation
 ```
 
 ---
 
-## 🚀 Setup & Installation
+## 🚀 Setup & Installation (Local Development)
 
 ### Prerequisites
-- **Node.js** 18+ and npm
-- **MongoDB** (local install or MongoDB Atlas account)
-- **RapidAPI Key** (for Google Places API)
+- **Node.js** v18.0 or higher
+- **MongoDB** (Local instance or MongoDB Atlas URI)
+- **RapidAPI Key** (For Google Places API access)
 
 ### 1. Clone the Repository
 ```bash
@@ -163,118 +164,71 @@ git clone https://github.com/Dev7570/healthconnect.git
 cd healthconnect
 ```
 
-### 2. Setup Backend
+### 2. Configure & Start Backend
 ```bash
 cd healthconnect-backend
 npm install
 ```
 
-Create a `.env` file:
+Create a `.env` file inside `healthconnect-backend`:
 ```env
 GOOGLE_PLACES_API_KEY=your_rapidapi_key_here
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/healthconnect
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/healthconnect
 ```
 
-> **MongoDB Atlas**: Replace `MONGODB_URI` with your Atlas connection string:
-> `mongodb+srv://username:password@cluster.mongodb.net/healthconnect`
-
-Start the backend:
+Start the backend server:
 ```bash
-npm start
+npm run start
 ```
+*The server will run on `http://localhost:5000`.*
 
-### 3. Setup Frontend
+### 3. Configure & Start Frontend
+Open a new terminal window:
 ```bash
 cd healthconnect
 npm install
 npm start
 ```
-
-The app will open at `http://localhost:3000`.
+*The React app will launch automatically at `http://localhost:3000`.*
 
 ---
 
 ## 📡 API Documentation
 
-**Base URL**: `http://localhost:5000`
+**Base API URL**: `https://healthconnect-backend-dev-7570-uniquehealthconnect-backend-api.onrender.com`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/` | Health check + DB status |
-| `GET` | `/hospitals?city=Delhi` | Search real hospitals by city |
-| `GET` | `/doctors?hospitalId=1` | Get doctors for a hospital |
-| `GET` | `/doctors/:id` | Get single doctor profile |
-| `POST` | `/appointments` | Book an appointment |
-| `GET` | `/appointments/:email` | Get user's appointments |
-| `DELETE` | `/appointments/:id` | Cancel an appointment |
-| `POST` | `/reviews` | Submit a hospital review |
-| `GET` | `/reviews/:hospitalId` | Get reviews for a hospital |
-| `POST` | `/payment` | Process a payment |
-
-### Example: Book an Appointment
-```bash
-curl -X POST http://localhost:5000/appointments \
-  -H "Content-Type: application/json" \
-  -d '{
-    "doctorName": "Dr. Priya Sharma",
-    "doctorSpec": "Cardiology",
-    "hospitalName": "AIIMS",
-    "date": "Mon, 24 Mar",
-    "time": "10:00 AM",
-    "patientName": "John Doe",
-    "patientEmail": "john@example.com",
-    "patientPhone": "+919876543210",
-    "fee": 800
-  }'
-```
+| `GET` | `/` | API Health check & Database connection status |
+| `GET` | `/hospitals?city=Delhi` | Query real Indian hospitals via Google Places proxy |
+| `GET` | `/doctors?hospitalId=1` | Retrieve available doctors for a specific hospital |
+| `GET` | `/doctors/:id` | Fetch an individual doctor's deep profile |
+| `POST` | `/appointments` | Create a new booking (Defaults to `Pending` status) |
+| `GET` | `/appointments/:email` | Retrieve all appointments for a specific user |
+| `DELETE` | `/appointments/:id` | Cancel an existing appointment |
+| `POST` | `/reviews` | Submit a hospital review and rating |
+| `GET` | `/reviews/:hospitalId` | Fetch aggregated reviews and average ratings |
+| `POST` | `/payment` | Process simulated payment & update Appointment to `Confirmed` |
 
 ---
 
-## 🌐 Deployment
+## 🌐 Deployment Strategy
 
-### Frontend → Vercel
-```bash
-cd healthconnect
-npm run build
-npx vercel --prod
-```
+This project utilizes a modern decoupled deployment strategy for maximum performance and scalability:
 
-### Backend → Render.com
-1. Push `healthconnect-backend` to a GitHub repo
-2. Go to [render.com](https://render.com) → New Web Service
-3. Connect your GitHub repo
-4. Set:
-   - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
-   - **Environment Variables**: `GOOGLE_PLACES_API_KEY`, `MONGODB_URI`, `PORT=5000`
+1. **Frontend (Vercel)**: The React application is deployed to Vercel. It utilizes an overridden `vercel.json` to seamlessly compile the optimized static build and serve it globally via Vercel's Edge Network.
+2. **Backend (Render)**: The Node.js/Express 5 API is hosted on Render.com as a Web Service. It connects directly to MongoDB Atlas and handles all cross-origin (CORS) requests securely from the Vercel domain.
 
 ---
 
-## 📸 Screenshots
-
-> Add screenshots of your application here:
-> - Home page with city search
-> - Hospital detail with doctor cards
-> - Booking flow and payment
-> - Dark mode view
-> - Doctor profile page
-> - Emergency SOS page
-
----
-
-## 👨‍💻 Credits
+## 👨‍💻 Credits & Attributes
 
 - **Developer**: Dev Gupta
 - **APIs**: Google Places (via RapidAPI)
-- **Auth**: Firebase Authentication
-- **Maps**: OpenStreetMap + Leaflet.js
-- **Icons**: Native emoji icons
+- **Auth**: Firebase Authentication by Google
+- **Maps**: OpenStreetMap + React-Leaflet
+- **License**: Built for educational purposes as an academic submission.
 
 ---
-
-## 📄 License
-
-This project is built for educational purposes and is part of a college submission.
-
 © 2026 HealthConnect. All rights reserved.

@@ -171,6 +171,7 @@ function BookingModal({doctor,hospital,user,onClose,onBooked}){
   const [name,setName]=useState(user?.displayName||"");
   const [age,setAge]=useState("");
   const [phone,setPhone]=useState("");
+  const [phoneError,setPhoneError]=useState("");
   const [reason,setReason]=useState("");
   const [done,setDone]=useState(false);
   const [bookingId,setBookingId]=useState("");
@@ -229,9 +230,10 @@ function BookingModal({doctor,hospital,user,onClose,onBooked}){
       });
       const data = await res.json();
       if (data.success) { setPaymentData(data.payment); setPaymentDone(true); setDone(true); if(onBooked) onBooked(); }
+      else { setPaymentData({id:"—",receiptNo:"—",status:"Pending",paidAt:null}); setPaymentDone(false); setDone(true); if(onBooked) onBooked(); }
     } catch (err) {
-      setPaymentData({id:"PAY"+Date.now(),receiptNo:"RCP"+Math.floor(Math.random()*900000+100000),status:"Success",paidAt:new Date().toISOString()});
-      setPaymentDone(true); setDone(true); if(onBooked) onBooked();
+      setPaymentData({id:"—",receiptNo:"—",status:"Pending",paidAt:null});
+      setPaymentDone(false); setDone(true); if(onBooked) onBooked();
     }
     setPaying(false);
   };
@@ -262,9 +264,10 @@ function BookingModal({doctor,hospital,user,onClose,onBooked}){
               </div>}
               {step===2&&<div>
                 <div style={{fontWeight:600,marginBottom:16}}>Patient Information</div>
-                {[["Full Name",name,setName,"text"],["Age",age,setAge,"number"],["Phone Number",phone,setPhone,"tel"]].map(([l,v,set,t])=><div key={l} style={{marginBottom:14}}><label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>{l}{l==="Phone Number"&&<span style={{fontSize:11,color:"#9CA3AF",marginLeft:6}}>📱 for SMS confirmation</span>}</label><input type={t} value={v} onChange={e=>set(e.target.value)} placeholder={l==="Phone Number"?"+91 XXXXX XXXXX":l} style={inp2}/></div>)}
+                {[["Full Name",name,setName,"text"],["Age",age,setAge,"number"]].map(([l,v,set,t])=><div key={l} style={{marginBottom:14}}><label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>{l}</label><input type={t} value={v} onChange={e=>set(e.target.value)} placeholder={l} style={inp2}/></div>)}
+                <div style={{marginBottom:14}}><label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>Phone Number<span style={{fontSize:11,color:"#9CA3AF",marginLeft:6}}>📱 10-digit mobile number</span></label><input type="tel" value={phone} onChange={e=>{const v=e.target.value.replace(/\D/g,"").slice(0,10);setPhone(v);setPhoneError(v.length>0&&v.length!==10?"Phone number must be exactly 10 digits":"");}} placeholder="9876543210" maxLength={10} style={{...inp2,borderColor:phoneError?"#DC2626":"#E5E7EB"}}/>{phoneError&&<div style={{fontSize:12,color:"#DC2626",marginTop:4}}>❌ {phoneError}</div>}</div>
                 <div style={{marginBottom:20}}><label style={{fontSize:13,fontWeight:500,color:"#6B7280",display:"block",marginBottom:6}}>Reason for Visit</label><textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder="Describe symptoms..." style={{...inp2,resize:"vertical",minHeight:80}}/></div>
-                <div style={{display:"flex",gap:10}}><button onClick={()=>setStep(1)} style={btn({flex:1,border:"2px solid #E5E7EB",background:"white",color:"#374151"})}>← Back</button><button onClick={()=>name&&setStep(3)} style={btn({flex:2,background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white"})}>Review →</button></div>
+                <div style={{display:"flex",gap:10}}><button onClick={()=>setStep(1)} style={btn({flex:1,border:"2px solid #E5E7EB",background:"white",color:"#374151"})}>← Back</button><button onClick={()=>{if(!name)return;if(phone&&phone.length!==10){setPhoneError("Phone number must be exactly 10 digits");return;}setPhoneError("");setStep(3);}} style={btn({flex:2,background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white"})}>Review →</button></div>
               </div>}
               {step===3&&<div>
                 <div style={{background:"#F8FAFC",borderRadius:14,padding:18,marginBottom:20}}>
@@ -338,17 +341,18 @@ function BookingModal({doctor,hospital,user,onClose,onBooked}){
             </>
           ):(
             <div style={{textAlign:"center",padding:"12px 0"}}>
-              <div style={{fontSize:56,marginBottom:12}}>🎉</div>
-              <div style={{fontSize:22,fontWeight:800,color:"#059669",marginBottom:6}}>Payment Successful!</div>
-              <div style={{fontSize:14,color:"#6B7280",marginBottom:8}}>Your appointment is confirmed and paid.</div>
-              {phone&&<div style={{background:"#F0FDF4",border:"1px solid #BBF7D0",borderRadius:8,padding:"8px 12px",fontSize:12,color:"#15803D",fontWeight:600,marginBottom:16}}>📱 SMS confirmation sent to {phone}</div>}
+              <div style={{fontSize:56,marginBottom:12}}>{paymentDone?"🎉":"📋"}</div>
+              <div style={{fontSize:22,fontWeight:800,color:paymentDone?"#059669":"#F59E0B",marginBottom:6}}>{paymentDone?"Payment Successful!":"Appointment Booked!"}</div>
+              <div style={{fontSize:14,color:"#6B7280",marginBottom:8}}>{paymentDone?"Your appointment is confirmed and paid.":"Your appointment is booked. Payment is pending."}</div>
+              {phone&&<div style={{background:paymentDone?"#F0FDF4":"#FFFBEB",border:paymentDone?"1px solid #BBF7D0":"1px solid #FDE68A",borderRadius:8,padding:"8px 12px",fontSize:12,color:paymentDone?"#15803D":"#92400E",fontWeight:600,marginBottom:16}}>📱 {paymentDone?"SMS confirmation sent to":"Booking details sent to"} {phone}</div>}
+              {!paymentDone&&<div style={{background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:10,padding:"12px 16px",fontSize:13,color:"#92400E",fontWeight:600,marginBottom:16}}>⚠️ Payment could not be processed. Please pay at the hospital or try again later.</div>}
 
               <div style={{background:"#F8FAFC",borderRadius:14,padding:18,textAlign:"left",marginBottom:20}}>
-                <div style={{fontWeight:700,marginBottom:12,color:"#0F4C81",fontSize:15}}>🧾 Payment Receipt</div>
-                {[["Booking ID",bookingId],["Payment ID",paymentData?.id||"—"],["Receipt No",paymentData?.receiptNo||"—"],["Doctor",doctor.name],["Hospital",hospital.name],["Date & Time",`${date}, ${slot}`],["Patient",user?.displayName||name],["Payment Method",payMethod==="upi"?"UPI":payMethod==="card"?"Card":"Net Banking"],["Amount Paid",`₹${doctor.fee}`],["Status","✅ Success"]].map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:8,fontSize:13}}><span style={{color:"#6B7280"}}>{k}</span><span style={{fontWeight:600}}>{v}</span></div>)}
+                <div style={{fontWeight:700,marginBottom:12,color:paymentDone?"#0F4C81":"#92400E",fontSize:15}}>{paymentDone?"🧾 Payment Receipt":"📋 Booking Confirmation"}</div>
+                {[["Booking ID",bookingId],...(paymentDone?[["Payment ID",paymentData?.id||"—"],["Receipt No",paymentData?.receiptNo||"—"]]:[["Payment","⏳ Pending"]]),["Doctor",doctor.name],["Hospital",hospital.name],["Date & Time",`${date}, ${slot}`],["Patient",user?.displayName||name],...(paymentDone?[["Payment Method",payMethod==="upi"?"UPI":payMethod==="card"?"Card":"Net Banking"],["Amount Paid",`₹${doctor.fee}`],["Status","✅ Success"]]:[["Amount Due",`₹${doctor.fee}`],["Status","⏳ Payment Pending"]])].map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",marginBottom:8,fontSize:13}}><span style={{color:"#6B7280"}}>{k}</span><span style={{fontWeight:600,color:v==="⏳ Pending"||v==="⏳ Payment Pending"?"#F59E0B":"inherit"}}>{v}</span></div>)}
               </div>
 
-              <button onClick={onClose} style={btn({background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white",padding:"12px 32px",borderRadius:12,fontSize:15})}>Done ✓</button>
+              <button onClick={onClose} style={btn({background:paymentDone?"linear-gradient(135deg,#0F4C81,#1E88E5)":"linear-gradient(135deg,#F59E0B,#D97706)",color:"white",padding:"12px 32px",borderRadius:12,fontSize:15})}>{paymentDone?"Done ✓":"Close — Pay Later"}</button>
             </div>
           )}
         </div>
@@ -650,9 +654,9 @@ export default function App(){
           </div>}
 
           {/* Loading / Error */}
-          {loadingHospitals&&<div style={{textAlign:"center",padding:"40px",background:"white",borderRadius:16,marginBottom:24}}>
+          {loadingHospitals&&<div style={{textAlign:"center",padding:"40px",background:theme.card,borderRadius:16,marginBottom:24}}>
             <div className="anim-spinner"></div>
-            <div style={{fontWeight:700,color:"#0F4C81",marginTop:8}}>Fetching real hospitals from Google...</div>
+            <div style={{fontWeight:700,color:dm?"#60A5FA":"#0F4C81",marginTop:8}}>Fetching real hospitals from Google...</div>
           </div>}
 
           {apiError&&<div style={{background:"#FFF1F2",border:"1px solid #FECDD3",borderRadius:14,padding:"16px 20px",marginBottom:24,display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{color:"#BE123C",fontWeight:600}}>⚠️ {apiError}</span><button onClick={()=>fetchHospitals(cityInput)} style={{background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white",border:"none",borderRadius:10,padding:"8px 20px",fontWeight:700,fontSize:13,cursor:"pointer",flexShrink:0,marginLeft:12}}>🔄 Retry</button></div>}
@@ -691,11 +695,11 @@ export default function App(){
           </div>
           <div style={{background:theme.card,borderRadius:14,padding:18,marginBottom:20,boxShadow:dm?"0 2px 8px rgba(0,0,0,0.3)":"0 2px 8px rgba(0,0,0,0.05)",display:"flex",gap:14,flexWrap:"wrap",alignItems:"center"}}>
             <div style={{flex:1,minWidth:200,position:"relative"}}><span style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)"}}>🔍</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search hospitals..." style={{...inp,paddingLeft:36}}/></div>
-            <select value={specFilter} onChange={e=>setSpecFilter(e.target.value)} style={{padding:"12px 16px",borderRadius:10,border:`2px solid ${theme.inputBorder}`,fontSize:14,background:theme.inputBg,color:theme.text,cursor:"pointer",fontFamily:"inherit"}}>{SPECIALITIES.map(sp=><option key={sp}>{sp}</option>)}</select>
-            <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{padding:"12px 16px",borderRadius:10,border:`2px solid ${theme.inputBorder}`,fontSize:14,background:theme.inputBg,color:theme.text,cursor:"pointer",fontFamily:"inherit"}}><option value="rating">Sort: Best Rated</option><option value="reviews">Sort: Most Reviewed</option></select>
+            <select value={specFilter} onChange={e=>setSpecFilter(e.target.value)} style={{padding:"12px 16px",borderRadius:10,border:`2px solid ${theme.inputBorder}`,fontSize:14,background:theme.inputBg,color:theme.text,cursor:"pointer",fontFamily:"inherit",outline:"none"}}>{SPECIALITIES.map(sp=><option key={sp} style={{background:theme.inputBg,color:theme.text}}>{sp}</option>)}</select>
+            <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{padding:"12px 16px",borderRadius:10,border:`2px solid ${theme.inputBorder}`,fontSize:14,background:theme.inputBg,color:theme.text,cursor:"pointer",fontFamily:"inherit",outline:"none"}}><option value="rating" style={{background:theme.inputBg,color:theme.text}}>Sort: Best Rated</option><option value="reviews" style={{background:theme.inputBg,color:theme.text}}>Sort: Most Reviewed</option></select>
           </div>
 
-          {loadingHospitals&&<div style={{textAlign:"center",padding:"60px",background:"white",borderRadius:16}}><div className="anim-spinner"></div><div style={{fontWeight:700,color:"#0F4C81",marginTop:8}}>Loading real hospitals...</div></div>}
+          {loadingHospitals&&<div style={{textAlign:"center",padding:"60px",background:theme.card,borderRadius:16}}><div className="anim-spinner"></div><div style={{fontWeight:700,color:dm?"#60A5FA":"#0F4C81",marginTop:8}}>Loading real hospitals...</div></div>}
 
           <div style={{display:"flex",flexDirection:"column",gap:14}}>
             {filtered.map(h=><div key={h.id} className="anim-card anim-hospital" style={card} onClick={()=>go("detail",h)}>
@@ -719,7 +723,7 @@ export default function App(){
                 </div>
               </div>
             </div>)}
-            {!loadingHospitals&&filtered.length===0&&<div style={{textAlign:"center",padding:"60px",background:"white",borderRadius:16,color:"#9CA3AF"}}><div style={{fontSize:48,marginBottom:12}}>🔍</div><div style={{fontSize:18,fontWeight:700}}>No hospitals found</div></div>}
+            {!loadingHospitals&&filtered.length===0&&<div style={{textAlign:"center",padding:"60px",background:theme.card,borderRadius:16,color:theme.muted}}><div style={{fontSize:48,marginBottom:12}}>🔍</div><div style={{fontSize:18,fontWeight:700}}>No hospitals found</div></div>}
           </div>
         </div>}
 
@@ -739,7 +743,7 @@ export default function App(){
             </div>
           </div>
 
-          <div style={{display:"flex",gap:4,background:"white",borderRadius:12,padding:6,marginBottom:20,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
+          <div style={{display:"flex",gap:4,background:theme.card,borderRadius:12,padding:6,marginBottom:20,boxShadow:dm?"0 2px 8px rgba(0,0,0,0.3)":"0 2px 8px rgba(0,0,0,0.05)"}}>
             {["doctors","tests","reviews","location"].map(tab=><button key={tab} onClick={()=>setActiveTab(tab)} style={{flex:1,padding:"10px",borderRadius:8,border:"none",fontWeight:700,fontSize:13,cursor:"pointer",background:activeTab===tab?`linear-gradient(135deg,${selectedHospital.color},${selectedHospital.color}BB)`:"transparent",color:activeTab===tab?"white":"#6B7280"}}>{tab==="doctors"?"👨‍⚕️ Doctors":tab==="tests"?"🧪 Tests":tab==="reviews"?"⭐ Reviews":"📍 Location"}</button>)}
           </div>
 
@@ -760,37 +764,37 @@ export default function App(){
             </div>}
           </div>}
 
-          {activeTab==="tests"&&<div style={{background:"white",borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.06)"}}>
-            <div style={{background:"#F8FAFC",padding:"14px 22px",fontWeight:800,fontSize:15,borderBottom:"1px solid #E5E7EB",display:"grid",gridTemplateColumns:"1fr 1fr"}}><span>Test Name</span><span style={{textAlign:"right"}}>Price (₹)</span></div>
-            {selectedHospital.tests.map((t,i)=><div key={t.name} style={{display:"grid",gridTemplateColumns:"1fr 1fr",padding:"14px 22px",borderBottom:i<selectedHospital.tests.length-1?"1px solid #F1F5F9":"none",background:i%2===0?"white":"#FAFAFA"}}><span style={{fontWeight:600}}>🧪 {t.name}</span><span style={{textAlign:"right",fontWeight:800,color:"#059669",fontSize:16}}>₹{t.price}</span></div>)}
+          {activeTab==="tests"&&<div style={{background:theme.card,borderRadius:16,overflow:"hidden",boxShadow:dm?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)"}}>
+            <div style={{background:dm?"#0F172A":"#F8FAFC",padding:"14px 22px",fontWeight:800,fontSize:15,borderBottom:`1px solid ${theme.cardBorder}`,display:"grid",gridTemplateColumns:"1fr 1fr",color:theme.text}}><span>Test Name</span><span style={{textAlign:"right"}}>Price (₹)</span></div>
+            {selectedHospital.tests.map((t,i)=><div key={t.name} style={{display:"grid",gridTemplateColumns:"1fr 1fr",padding:"14px 22px",borderBottom:i<selectedHospital.tests.length-1?`1px solid ${theme.cardBorder}`:"none",background:i%2===0?theme.card:dm?"#162032":"#FAFAFA"}}><span style={{fontWeight:600,color:theme.text}}>🧪 {t.name}</span><span style={{textAlign:"right",fontWeight:800,color:"#059669",fontSize:16}}>₹{t.price}</span></div>)}
           </div>}
 
           {activeTab==="reviews"&&<div>
-            <div style={{background:"white",borderRadius:16,padding:20,marginBottom:16,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
-              <div style={{fontWeight:700,marginBottom:12,fontSize:15}}>Write a Review</div>
-              <div style={{display:"flex",gap:6,marginBottom:12}}>{[1,2,3,4,5].map(st=><span key={st} onClick={()=>setReviewRating(st)} style={{fontSize:28,cursor:"pointer",color:st<=reviewRating?"#F59E0B":"#D1D5DB"}}>★</span>)}</div>
+            <div style={{background:theme.card,borderRadius:16,padding:20,marginBottom:16,boxShadow:dm?"0 2px 8px rgba(0,0,0,0.3)":"0 2px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontWeight:700,marginBottom:12,fontSize:15,color:theme.text}}>Write a Review</div>
+              <div style={{display:"flex",gap:6,marginBottom:12}}>{[1,2,3,4,5].map(st=><span key={st} onClick={()=>setReviewRating(st)} style={{fontSize:28,cursor:"pointer",color:st<=reviewRating?"#F59E0B":dm?"#475569":"#D1D5DB"}}>★</span>)}</div>
               <textarea value={reviewText} onChange={e=>setReviewText(e.target.value)} placeholder="Share your experience..." style={{...inp,minHeight:80,resize:"vertical"}}/>
               <button onClick={()=>submitReview(selectedHospital.id,selectedHospital.name)} style={btn({background:`linear-gradient(135deg,${selectedHospital.color},${selectedHospital.color}99)`,color:"white",marginTop:10})}>Submit Review</button>
             </div>
             {/* 🆕 Show reviews fetched from backend */}
-            {loadingReviews&&<div style={{textAlign:"center",padding:20,color:"#6B7280"}}>Loading reviews...</div>}
+            {loadingReviews&&<div style={{textAlign:"center",padding:20,color:theme.muted}}>Loading reviews...</div>}
             {hospitalReviews.length>0?hospitalReviews.map(r=>(
-              <div key={r.id} style={{background:"white",borderRadius:14,padding:"16px 20px",marginBottom:10,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
+              <div key={r.id} style={{background:theme.card,borderRadius:14,padding:"16px 20px",marginBottom:10,boxShadow:dm?"0 2px 8px rgba(0,0,0,0.3)":"0 2px 8px rgba(0,0,0,0.05)"}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontWeight:700,fontSize:14}}>👤 {r.userName}</div>
-                  <div><Star rating={r.rating} size={14}/> <span style={{fontWeight:700,fontSize:13,marginLeft:4}}>{r.rating}/5</span></div>
+                  <div style={{fontWeight:700,fontSize:14,color:theme.text}}>👤 {r.userName}</div>
+                  <div><Star rating={r.rating} size={14}/> <span style={{fontWeight:700,fontSize:13,marginLeft:4,color:theme.text}}>{r.rating}/5</span></div>
                 </div>
-                <div style={{fontSize:14,color:"#374151",lineHeight:1.6}}>{r.text}</div>
-                <div style={{fontSize:11,color:"#9CA3AF",marginTop:8}}>{new Date(r.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</div>
+                <div style={{fontSize:14,color:theme.muted,lineHeight:1.6}}>{r.text}</div>
+                <div style={{fontSize:11,color:theme.muted,marginTop:8}}>{new Date(r.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}</div>
               </div>
-            )):(!loadingReviews&&<div style={{textAlign:"center",padding:"30px",background:"white",borderRadius:14,color:"#9CA3AF"}}>No reviews yet. Be the first to review!</div>)}
+            )):(!loadingReviews&&<div style={{textAlign:"center",padding:"30px",background:theme.card,borderRadius:14,color:theme.muted}}>No reviews yet. Be the first to review!</div>)}
           </div>}
 
           {activeTab==="location"&&<div>
             <RealMap hospitals={[selectedHospital]} onSelect={()=>{}}/>
-            <div style={{background:"white",borderRadius:14,padding:"16px 20px",marginTop:16,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
-              <div style={{fontWeight:700,marginBottom:8}}>📍 {selectedHospital.name}</div>
-              <div style={{fontSize:14,color:"#6B7280",marginBottom:14}}>{selectedHospital.address}</div>
+            <div style={{background:theme.card,borderRadius:14,padding:"16px 20px",marginTop:16,boxShadow:dm?"0 2px 8px rgba(0,0,0,0.3)":"0 2px 8px rgba(0,0,0,0.05)"}}>
+              <div style={{fontWeight:700,marginBottom:8,color:theme.text}}>📍 {selectedHospital.name}</div>
+              <div style={{fontSize:14,color:theme.muted,marginBottom:14}}>{selectedHospital.address}</div>
               <a href={`https://www.google.com/maps/dir/?api=1&destination=${selectedHospital.lat},${selectedHospital.lng}`} target="_blank" rel="noreferrer" style={{display:"block",padding:"12px",borderRadius:12,background:"#1E88E5",color:"white",fontWeight:700,textAlign:"center",textDecoration:"none",fontSize:14}}>🗺️ Get Directions on Google Maps</a>
             </div>
           </div>}
@@ -799,24 +803,24 @@ export default function App(){
         {/* =========== COMPARE =========== */}
         {view==="compare"&&<div>
           <h2 style={{margin:"0 0 8px",fontWeight:800,fontSize:22}}>🧪 Test Price Comparison</h2>
-          <p style={{margin:"0 0 24px",color:"#6B7280"}}>Select tests to compare prices across hospitals</p>
-          <div style={{background:"white",borderRadius:14,padding:20,marginBottom:24,boxShadow:"0 2px 8px rgba(0,0,0,0.05)"}}>
-            <div style={{fontWeight:700,marginBottom:12}}>Select Tests</div>
-            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>{ALL_TESTS.map(t=><button key={t} onClick={()=>toggleTest(t)} style={{padding:"8px 16px",borderRadius:20,border:selectedTests.includes(t)?"2px solid #1E88E5":"2px solid #E5E7EB",background:selectedTests.includes(t)?"#EFF6FF":"white",color:selectedTests.includes(t)?"#1E88E5":"#374151",fontWeight:selectedTests.includes(t)?700:500,fontSize:13,cursor:"pointer"}}>{selectedTests.includes(t)?"✓ ":""}{t}</button>)}</div>
+          <p style={{margin:"0 0 24px",color:theme.muted}}>Select tests to compare prices across hospitals</p>
+          <div style={{background:theme.card,borderRadius:14,padding:20,marginBottom:24,boxShadow:dm?"0 2px 8px rgba(0,0,0,0.3)":"0 2px 8px rgba(0,0,0,0.05)"}}>
+            <div style={{fontWeight:700,marginBottom:12,color:theme.text}}>Select Tests</div>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>{ALL_TESTS.map(t=><button key={t} onClick={()=>toggleTest(t)} style={{padding:"8px 16px",borderRadius:20,border:selectedTests.includes(t)?"2px solid #1E88E5":`2px solid ${theme.inputBorder}`,background:selectedTests.includes(t)?(dm?"#1E3A5F":"#EFF6FF"):theme.card,color:selectedTests.includes(t)?"#1E88E5":theme.text,fontWeight:selectedTests.includes(t)?700:500,fontSize:13,cursor:"pointer"}}>{selectedTests.includes(t)?"✓ ":""}{t}</button>)}</div>
           </div>
-          {selectedTests.length>0&&hospitals.length>0&&<div style={{background:"white",borderRadius:16,overflow:"hidden",boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}}>
+          {selectedTests.length>0&&hospitals.length>0&&<div style={{background:theme.card,borderRadius:16,overflow:"hidden",boxShadow:dm?"0 4px 16px rgba(0,0,0,0.3)":"0 4px 16px rgba(0,0,0,0.08)"}}>
             <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse"}}>
               <thead><tr style={{background:"linear-gradient(135deg,#0F4C81,#1565C0)"}}><th style={{padding:"16px 20px",textAlign:"left",color:"white",fontSize:14,fontWeight:700}}>Test Name</th>{hospitals.slice(0,5).map(h=><th key={h.id} style={{padding:"16px 20px",textAlign:"center",color:"white",fontSize:13,fontWeight:700,minWidth:130}}>{h.name.split(" ").slice(0,2).join(" ")}</th>)}</tr></thead>
               <tbody>{selectedTests.map((test,ti)=>{
                 const prices=hospitals.slice(0,5).map(h=>h.tests.find(t=>t.name===test)?.price).filter(Boolean);
                 const mn=Math.min(...prices),mx=Math.max(...prices);
-                return<tr key={test} style={{background:ti%2===0?"white":"#F8FAFC",borderBottom:"1px solid #F1F5F9"}}>
-                  <td style={{padding:"14px 20px",fontWeight:700}}>🧪 {test}</td>
-                  {hospitals.slice(0,5).map(h=>{const td=h.tests.find(t=>t.name===test);if(!td)return<td key={h.id} style={{padding:"14px 20px",textAlign:"center",color:"#D1D5DB"}}>—</td>;return<td key={h.id} style={{padding:"14px 20px",textAlign:"center"}}><div style={{fontWeight:800,fontSize:16,color:td.price===mn?"#059669":td.price===mx?"#DC2626":"#111827"}}>₹{td.price}</div>{td.price===mn&&<div style={{fontSize:10,fontWeight:700,color:"#059669"}}>✓ CHEAPEST</div>}</td>;})}
+                return<tr key={test} style={{background:ti%2===0?theme.card:dm?"#162032":"#F8FAFC",borderBottom:`1px solid ${theme.cardBorder}`}}>
+                  <td style={{padding:"14px 20px",fontWeight:700,color:theme.text}}>🧪 {test}</td>
+                  {hospitals.slice(0,5).map(h=>{const td=h.tests.find(t=>t.name===test);if(!td)return<td key={h.id} style={{padding:"14px 20px",textAlign:"center",color:theme.muted}}>—</td>;return<td key={h.id} style={{padding:"14px 20px",textAlign:"center"}}><div style={{fontWeight:800,fontSize:16,color:td.price===mn?"#059669":td.price===mx?"#DC2626":theme.text}}>₹{td.price}</div>{td.price===mn&&<div style={{fontSize:10,fontWeight:700,color:"#059669"}}>✓ CHEAPEST</div>}</td>;})}
                 </tr>;
               })}</tbody>
             </table></div>
-            <div style={{padding:"14px 20px",background:"#FFFBEB",fontSize:13,color:"#92400E"}}><span style={{color:"#059669",fontWeight:700}}>Green</span> = Cheapest · <span style={{color:"#DC2626",fontWeight:700}}>Red</span> = Most Expensive</div>
+            <div style={{padding:"14px 20px",background:dm?"#1C1A0E":"#FFFBEB",fontSize:13,color:dm?"#FCD34D":"#92400E"}}><span style={{color:"#059669",fontWeight:700}}>Green</span> = Cheapest · <span style={{color:"#DC2626",fontWeight:700}}>Red</span> = Most Expensive</div>
           </div>}
         </div>}
 
@@ -826,10 +830,10 @@ export default function App(){
           <p style={{margin:"0 0 20px",color:"#6B7280"}}>Click on any marker to view details and get directions</p>
           {hospitals.length>0&&<RealMap hospitals={hospitals.slice(0,15)} onSelect={h=>go("detail",h)}/>}
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12,marginTop:20}}>
-            {hospitals.slice(0,6).map(h=><div key={h.id} onClick={()=>go("detail",h)} style={{background:"white",borderRadius:14,padding:"14px 16px",cursor:"pointer",boxShadow:"0 2px 8px rgba(0,0,0,0.06)",display:"flex",gap:12,alignItems:"center"}} onMouseEnter={e=>e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.12)"} onMouseLeave={e=>e.currentTarget.style.boxShadow="0 2px 8px rgba(0,0,0,0.06)"}>
+            {hospitals.slice(0,6).map(h=><div key={h.id} onClick={()=>go("detail",h)} style={{background:theme.card,borderRadius:14,padding:"14px 16px",cursor:"pointer",boxShadow:dm?"0 2px 8px rgba(0,0,0,0.3)":"0 2px 8px rgba(0,0,0,0.06)",display:"flex",gap:12,alignItems:"center"}} onMouseEnter={e=>e.currentTarget.style.boxShadow=dm?"0 4px 16px rgba(0,0,0,0.5)":"0 4px 16px rgba(0,0,0,0.12)"} onMouseLeave={e=>e.currentTarget.style.boxShadow=dm?"0 2px 8px rgba(0,0,0,0.3)":"0 2px 8px rgba(0,0,0,0.06)"}>
               <div style={{width:42,height:42,borderRadius:10,background:`${h.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🏥</div>
-              <div style={{flex:1}}><div style={{fontWeight:700,fontSize:14}}>{h.name}</div><div style={{fontSize:12,color:"#9CA3AF"}}>⭐ {h.rating} · {h.reviews.toLocaleString()} reviews</div></div>
-              <a href={`https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}`} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{background:"#EFF6FF",color:"#1E88E5",padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:700,textDecoration:"none"}}>Directions</a>
+              <div style={{flex:1}}><div style={{fontWeight:700,fontSize:14,color:theme.text}}>{h.name}</div><div style={{fontSize:12,color:theme.muted}}>⭐ {h.rating} · {h.reviews.toLocaleString()} reviews</div></div>
+              <a href={`https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}`} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{background:dm?"#1E3A5F":"#EFF6FF",color:"#1E88E5",padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:700,textDecoration:"none"}}>Directions</a>
             </div>)}
           </div>
         </div>}
@@ -839,12 +843,12 @@ export default function App(){
           <h2 style={{margin:"0 0 8px",fontWeight:800,fontSize:22}}>📋 My Appointments</h2>
           <p style={{margin:"0 0 20px",color:"#6B7280"}}>Track and manage your booked appointments</p>
 
-          {loadingAppts&&<div style={{textAlign:"center",padding:"60px",background:"white",borderRadius:16}}><div style={{fontSize:40,marginBottom:12}}>📋</div><div style={{fontWeight:700,color:"#0F4C81"}}>Loading your appointments...</div></div>}
+          {loadingAppts&&<div style={{textAlign:"center",padding:"60px",background:theme.card,borderRadius:16}}><div style={{fontSize:40,marginBottom:12}}>📋</div><div style={{fontWeight:700,color:dm?"#60A5FA":"#0F4C81"}}>Loading your appointments...</div></div>}
 
-          {!loadingAppts&&myAppointments.length===0&&<div style={{textAlign:"center",padding:"60px",background:"white",borderRadius:16,boxShadow:"0 2px 12px rgba(0,0,0,0.06)"}}>
+          {!loadingAppts&&myAppointments.length===0&&<div style={{textAlign:"center",padding:"60px",background:theme.card,borderRadius:16,boxShadow:dm?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)"}}>
             <div style={{fontSize:64,marginBottom:16}}>📅</div>
-            <div style={{fontSize:20,fontWeight:800,color:"#374151",marginBottom:8}}>No Appointments Yet</div>
-            <div style={{fontSize:14,color:"#9CA3AF",marginBottom:20}}>Book your first appointment from the hospital list</div>
+            <div style={{fontSize:20,fontWeight:800,color:theme.text,marginBottom:8}}>No Appointments Yet</div>
+            <div style={{fontSize:14,color:theme.muted,marginBottom:20}}>Book your first appointment from the hospital list</div>
             <button onClick={()=>go("list")} style={btn({background:"linear-gradient(135deg,#0F4C81,#1E88E5)",color:"white",padding:"12px 28px",borderRadius:12})}>Find Hospitals →</button>
           </div>}
 
@@ -865,7 +869,7 @@ export default function App(){
                       <div style={{fontSize:11,color:"#9CA3AF"}}>Consultation Fee</div>
                     </div>
                   </div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,background:"#F8FAFC",borderRadius:12,padding:14,marginBottom:12}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,background:dm?"#0F172A":"#F8FAFC",borderRadius:12,padding:14,marginBottom:12}}>
                     {[["🏥 Hospital",apt.hospitalName],["📅 Date",apt.date],["🕐 Time",apt.time],["👤 Patient",apt.patientName]].map(([k,v])=><div key={k}><div style={{fontSize:11,color:"#9CA3AF",marginBottom:2}}>{k}</div><div style={{fontSize:13,fontWeight:600}}>{v}</div></div>)}
                   </div>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -889,13 +893,13 @@ export default function App(){
 
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:16}}>
             {EMERGENCY_CONTACTS.map(ec=>(
-              <div key={ec.number} className="anim-card anim-tipcard" style={{background:"white",borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.06)"}}>
+              <div key={ec.number} className="anim-card anim-tipcard" style={{background:theme.card,borderRadius:16,overflow:"hidden",boxShadow:dm?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)"}}>
                 <div style={{background:`${ec.color}11`,padding:"16px 20px",borderBottom:`3px solid ${ec.color}25`}}>
                   <div style={{display:"flex",alignItems:"center",gap:12}}>
                     <div style={{width:48,height:48,borderRadius:14,background:`${ec.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>{ec.icon}</div>
                     <div>
-                      <div style={{fontWeight:800,fontSize:16}}>{ec.name}</div>
-                      <div style={{fontSize:12,color:"#6B7280"}}>{ec.desc}</div>
+                      <div style={{fontWeight:800,fontSize:16,color:theme.text}}>{ec.name}</div>
+                      <div style={{fontSize:12,color:theme.muted}}>{ec.desc}</div>
                     </div>
                   </div>
                 </div>
@@ -979,22 +983,22 @@ export default function App(){
 
           <div style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
             {["All","Prevention","Nutrition","Mental Health","First Aid","Fitness","Hygiene","Sleep","Hydration"].map(cat=>(
-              <button key={cat} className="anim-filter" onClick={()=>setTipsFilter(cat)} style={{padding:"8px 16px",borderRadius:20,border:tipsFilter===cat?"2px solid #059669":"2px solid #E5E7EB",background:tipsFilter===cat?"#F0FDF4":"white",color:tipsFilter===cat?"#059669":"#6B7280",fontWeight:tipsFilter===cat?700:500,fontSize:13,cursor:"pointer"}}>{cat}</button>
+              <button key={cat} className="anim-filter" onClick={()=>setTipsFilter(cat)} style={{padding:"8px 16px",borderRadius:20,border:tipsFilter===cat?"2px solid #059669":`2px solid ${theme.inputBorder}`,background:tipsFilter===cat?(dm?"#064E3B":"#F0FDF4"):theme.card,color:tipsFilter===cat?"#059669":theme.muted,fontWeight:tipsFilter===cat?700:500,fontSize:13,cursor:"pointer"}}>{cat}</button>
             ))}
           </div>
 
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:16}}>
             {HEALTH_TIPS.filter(t=>tipsFilter==="All"||t.category===tipsFilter).map(tip=>(
-              <div key={tip.id} className="anim-card anim-tipcard" style={{background:"white",borderRadius:16,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.06)"}}>
+              <div key={tip.id} className="anim-card anim-tipcard" style={{background:theme.card,borderRadius:16,overflow:"hidden",boxShadow:dm?"0 2px 12px rgba(0,0,0,0.3)":"0 2px 12px rgba(0,0,0,0.06)"}}>
                 <div style={{background:`${tip.color}11`,padding:"18px 20px",borderBottom:`3px solid ${tip.color}25`}}>
                   <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
                     <div style={{fontSize:28}}>{tip.icon}</div>
                     <Badge color={`${tip.color}18`} text={tip.color}>{tip.category}</Badge>
                   </div>
-                  <div style={{fontWeight:800,fontSize:17}}>{tip.title}</div>
+                  <div style={{fontWeight:800,fontSize:17,color:theme.text}}>{tip.title}</div>
                 </div>
                 <div style={{padding:"16px 20px"}}>
-                  <div style={{fontSize:14,color:"#374151",lineHeight:1.7,marginBottom:12}}>{tip.desc}</div>
+                  <div style={{fontSize:14,color:theme.muted,lineHeight:1.7,marginBottom:12}}>{tip.desc}</div>
                   <div style={{background:`${tip.color}10`,borderRadius:10,padding:"10px 14px",fontSize:13,color:tip.color,fontWeight:600}}>💡 {tip.tip}</div>
                 </div>
               </div>

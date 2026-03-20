@@ -623,7 +623,7 @@ export default function App(){
             <div style={{display:"flex",gap:12,maxWidth:600,marginBottom:16}}>
               <div style={{flex:1,position:"relative"}}>
                 <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:18}}>🏙️</span>
-                <input value={cityInput} onChange={e=>setCityInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&fetchHospitals(cityInput)} placeholder="Enter city (e.g. Mumbai, Delhi, Bangalore)" style={{...inp,paddingLeft:44,borderColor:"transparent",background:"rgba(255,255,255,0.95)",borderRadius:12,fontSize:15}}/>
+                <input value={cityInput} onChange={e=>setCityInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&fetchHospitals(cityInput)} placeholder="Enter city (e.g. Mumbai, Delhi, Bangalore)" style={{...inp,paddingLeft:44,borderColor:"transparent",background:"rgba(255,255,255,0.95)",color:"#111827",borderRadius:12,fontSize:15}}/>
               </div>
               <button onClick={()=>fetchHospitals(cityInput)} disabled={loadingHospitals} style={btn({background:"#F59E0B",color:"#111827",fontSize:15,padding:"12px 28px",borderRadius:12})}>
                 {loadingHospitals?"Loading...":"Search 🔍"}
@@ -633,7 +633,7 @@ export default function App(){
             <div style={{display:"flex",gap:12,maxWidth:600}}>
               <div style={{flex:1,position:"relative"}}>
                 <span style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",fontSize:18}}>🔍</span>
-                <input value={searchInput} onChange={e=>setSearchInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){setSearch(searchInput);go("list");}}} placeholder="Search hospital by name..." style={{...inp,paddingLeft:44,borderColor:"transparent",background:"rgba(255,255,255,0.95)",borderRadius:12,fontSize:15}}/>
+                <input value={searchInput} onChange={e=>setSearchInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){setSearch(searchInput);go("list");}}} placeholder="Search hospital by name..." style={{...inp,paddingLeft:44,borderColor:"transparent",background:"rgba(255,255,255,0.95)",color:"#111827",borderRadius:12,fontSize:15}}/>
               </div>
               <button onClick={()=>{setSearch(searchInput);go("list");}} style={btn({background:"white",color:"#0F4C81",fontSize:15,padding:"12px 28px",borderRadius:12})}>Search</button>
             </div>

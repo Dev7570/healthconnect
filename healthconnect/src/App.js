@@ -594,7 +594,7 @@ export default function App(){
         <div style={{maxWidth:1100,margin:"0 auto",display:"flex",alignItems:"center",gap:16,height:60}}>
           <div style={{color:"white",fontWeight:900,fontSize:20,cursor:"pointer"}} onClick={()=>go("home")}>🩺 HealthConnect</div>
           <div style={{flex:1}}/>
-          {[["Hospitals","list"],["👨‍⚕️ Doctors","allDoctors"],["Compare","compare"],["🗺️ Map","map"],["🚨 SOS","emergency"],["💡 Tips","tips"],...(user?[["📋 My Appts","appointments"]]:[])]  .map(([l,v])=><span key={v} className="anim-navlink" onClick={()=>go(v)} style={{color:"white",fontSize:13,cursor:"pointer",fontWeight:600,padding:"6px 10px",borderRadius:8,background:view===v?"rgba(255,255,255,0.2)":"transparent"}}>{l}</span>)}
+          {[["Hospitals","list"],["👨‍⚕️ Doctors","allDoctors"],["Compare","compare"],["🗺️ Map","map"],["🚨 SOS","emergency"],["💡 Tips","tips"],...(user?[["📋 My Appts","appointments"]]:[])].map(([l,v])=><span key={v} className="anim-navlink" onClick={()=>go(v)} style={{color:"white",fontSize:13,cursor:"pointer",fontWeight:600,padding:"6px 10px",borderRadius:8,background:view===v?"rgba(255,255,255,0.2)":"transparent"}}>{l}</span>)}
           {/* 🌙 Dark Mode Toggle */}
           <button onClick={()=>setDarkMode(!dm)} style={{background:dm?"rgba(255,255,255,0.15)":"rgba(0,0,0,0.15)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:20,padding:"6px 12px",color:"white",cursor:"pointer",fontSize:16,fontWeight:600,transition:"all 0.3s"}} title={dm?"Switch to Light Mode":"Switch to Dark Mode"}>{dm?"☀️":"🌙"}</button>
           {user ? (

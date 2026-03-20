@@ -171,7 +171,7 @@ app.post("/appointments", async (req, res) => {
     patientAge: patientAge || "N/A", patientEmail,
     patientPhone: patientPhone || "",
     reason: reason || "General Consultation",
-    fee: fee || 500, status: "Confirmed", bookedAt: new Date(),
+    fee: fee || 500, status: "Pending", bookedAt: new Date(),
   });
   try {
     await appointment.save();
@@ -252,6 +252,7 @@ app.post("/payment", async (req, res) => {
   });
   try {
     await payment.save();
+    await Appointment.findOneAndUpdate({ id: appointmentId }, { status: "Confirmed" });
     console.log(`💳 Payment: ₹${amount} via ${method}`);
     res.json({ success: true, payment });
   } catch (err) {

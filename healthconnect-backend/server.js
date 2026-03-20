@@ -31,8 +31,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// Handle preflight requests
-app.options("*", cors());
+// Preflight requests are handled by the global app.use(cors(...))
 
 app.use(express.json());
 

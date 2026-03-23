@@ -587,7 +587,7 @@ export default function App(){
     <div style={{fontFamily:"'Nunito','Segoe UI',sans-serif",minHeight:"100vh",background:theme.bg,color:theme.text,transition:"background 0.3s,color 0.3s"}}>
       <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
       {notif&&<div className="anim-notif" style={{position:"fixed",top:20,right:20,background:"linear-gradient(135deg,#065F46,#059669)",color:"white",padding:"14px 22px",borderRadius:14,zIndex:9999,fontWeight:700,fontSize:14,boxShadow:"0 10px 30px rgba(5,150,105,0.4)"}}>✓ {notif}</div>}
-      {bookingDoctor&&selectedHospital&&<BookingModal doctor={bookingDoctor} hospital={selectedHospital} user={user} onClose={()=>setBookingDoctor(null)} onBooked={fetchMyAppointments}/>}
+      {bookingDoctor&&<BookingModal doctor={bookingDoctor} hospital={selectedHospital || { id: 1, name: "HealthConnect Network Hospital" }} user={user} onClose={()=>setBookingDoctor(null)} onBooked={fetchMyAppointments}/>}
 
       {/* NAVBAR */}
       <nav style={{background:theme.navBg,padding:"0 20px",position:"sticky",top:0,zIndex:500,boxShadow:dm?"0 2px 20px rgba(0,0,0,0.5)":"0 2px 20px rgba(15,76,129,0.4)",animation:"slideDown 0.5s ease-out"}}>

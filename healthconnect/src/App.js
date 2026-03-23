@@ -208,7 +208,7 @@ function BookingModal({doctor,hospital,user,onClose,onBooked,initialSlot}){
       if (data.success) {
         setBookingId(data.appointment.id);
         setStep(4); // Go to payment step
-      }
+      } else { throw new Error(data.error); }
     } catch (err) {
       setBookingId("HC" + Math.floor(Math.random() * 90000 + 10000));
       setStep(4);

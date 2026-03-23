@@ -164,10 +164,10 @@ function AuthPage({onSuccess}){
   );
 }
 
-function BookingModal({doctor,hospital,user,onClose,onBooked}){
+function BookingModal({doctor,hospital,user,onClose,onBooked,initialSlot}){
   const [step,setStep]=useState(1);
   const [date,setDate]=useState("Mon, 24 Mar");
-  const [slot,setSlot]=useState(null);
+  const [slot,setSlot]=useState(initialSlot||null);
   const [name,setName]=useState(user?.displayName||"");
   const [age,setAge]=useState("");
   const [phone,setPhone]=useState("");
@@ -373,7 +373,9 @@ export default function App(){
   const [specFilter,setSpecFilter]=useState("All");
   const [sortBy,setSortBy]=useState("rating");
   const [bookingDoctor,setBookingDoctor]=useState(null);
+  const [bookingSlot,setBookingSlot]=useState(null);
   const [pendingDoc,setPendingDoc]=useState(null);
+  const [pendingSlot,setPendingSlot]=useState(null);
   const [activeTab,setActiveTab]=useState("doctors");
   const [selectedTests,setSelectedTests]=useState(["Blood Test (CBC)","MRI Brain"]);
   const [reviewText,setReviewText]=useState("");
@@ -556,7 +558,7 @@ export default function App(){
   const notifShow=(m)=>{setNotif(m);setTimeout(()=>setNotif(null),3000);};
   const toggleTest=(t)=>setSelectedTests(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
   const handleLogout=async()=>{ await signOut(auth); notifShow("Logged out successfully!"); };
-  const handleBookClick=(doc)=>{ if(!user){ setPendingDoc(doc); setShowAuth(true); } else { setBookingDoctor(doc); } };
+  const handleBookClick=(doc,slotToSelect=null)=>{ if(!user){ setPendingDoc(doc); setPendingSlot(slotToSelect); setShowAuth(true); } else { setBookingSlot(slotToSelect); setBookingDoctor(doc); } };
 
   // 🆕 Cancel appointment via backend
   const cancelAppointment = async (id) => {
@@ -582,13 +584,13 @@ export default function App(){
   const inp={padding:"12px 16px",borderRadius:10,border:`2px solid ${theme.inputBorder}`,fontSize:14,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box",background:theme.inputBg,color:theme.text};
 
   if(authLoading) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",fontSize:20,fontWeight:700,color:"#0F4C81",background:theme.bg}}>🩺 Loading HealthConnect...</div>;
-  if(showAuth) return <AuthPage onSuccess={()=>{ setShowAuth(false); if(pendingDoc){ setBookingDoctor(pendingDoc); setPendingDoc(null); } }}/>;
+  if(showAuth) return <AuthPage onSuccess={()=>{ setShowAuth(false); if(pendingDoc){ setBookingSlot(pendingSlot); setBookingDoctor(pendingDoc); setPendingDoc(null); setPendingSlot(null); } }}/>;
 
   return(
     <div style={{fontFamily:"'Nunito','Segoe UI',sans-serif",minHeight:"100vh",background:theme.bg,color:theme.text,transition:"background 0.3s,color 0.3s"}}>
       <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
       {notif&&<div className="anim-notif" style={{position:"fixed",top:20,right:20,background:"linear-gradient(135deg,#065F46,#059669)",color:"white",padding:"14px 22px",borderRadius:14,zIndex:9999,fontWeight:700,fontSize:14,boxShadow:"0 10px 30px rgba(5,150,105,0.4)"}}>✓ {notif}</div>}
-      {bookingDoctor&&<BookingModal doctor={bookingDoctor} hospital={selectedHospital || { id: 1, name: "HealthConnect Network Hospital" }} user={user} onClose={()=>setBookingDoctor(null)} onBooked={fetchMyAppointments}/>}
+      {bookingDoctor&&<BookingModal doctor={bookingDoctor} hospital={selectedHospital || { id: 1, name: "HealthConnect Network Hospital" }} user={user} onClose={()=>{setBookingDoctor(null); setBookingSlot(null);}} onBooked={fetchMyAppointments} initialSlot={bookingSlot}/>}
 
       {/* NAVBAR */}
       <nav style={{background:theme.navBg,padding:"0 20px",position:"sticky",top:0,zIndex:500,boxShadow:dm?"0 2px 20px rgba(0,0,0,0.5)":"0 2px 20px rgba(15,76,129,0.4)",animation:"slideDown 0.5s ease-out"}}>
@@ -1041,7 +1043,7 @@ export default function App(){
             <div style={{fontSize:14,color:theme.muted,marginBottom:16}}>{selectedDoctor.qualifications||"MBBS, MD"}</div>
             <div style={{fontWeight:700,fontSize:14,marginBottom:8,color:theme.text}}>🕐 Available Slots</div>
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-              {(selectedDoctor.slots||TIME_SLOTS.slice(0,5)).map(s=><span key={s} style={{background:dm?"#334155":"#EFF6FF",color:dm?"#60A5FA":"#1E88E5",padding:"6px 14px",borderRadius:10,fontSize:13,fontWeight:600}}>{s}</span>)}
+              {(selectedDoctor.slots||TIME_SLOTS.slice(0,5)).map(s=><span key={s} onClick={()=>handleBookClick(selectedDoctor, s)} className="anim-navlink" style={{background:dm?"#334155":"#EFF6FF",color:dm?"#60A5FA":"#1E88E5",padding:"6px 14px",borderRadius:10,fontSize:13,fontWeight:600,cursor:"pointer",display:"inline-block"}}>{s}</span>)}
             </div>
           </div>
 

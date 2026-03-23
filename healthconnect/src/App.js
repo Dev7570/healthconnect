@@ -373,6 +373,7 @@ export default function App(){
   const [specFilter,setSpecFilter]=useState("All");
   const [sortBy,setSortBy]=useState("rating");
   const [bookingDoctor,setBookingDoctor]=useState(null);
+  const [pendingDoc,setPendingDoc]=useState(null);
   const [activeTab,setActiveTab]=useState("doctors");
   const [selectedTests,setSelectedTests]=useState(["Blood Test (CBC)","MRI Brain"]);
   const [reviewText,setReviewText]=useState("");
@@ -555,7 +556,7 @@ export default function App(){
   const notifShow=(m)=>{setNotif(m);setTimeout(()=>setNotif(null),3000);};
   const toggleTest=(t)=>setSelectedTests(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
   const handleLogout=async()=>{ await signOut(auth); notifShow("Logged out successfully!"); };
-  const handleBookClick=(doc)=>{ if(!user){ setShowAuth(true); } else { setBookingDoctor(doc); } };
+  const handleBookClick=(doc)=>{ if(!user){ setPendingDoc(doc); setShowAuth(true); } else { setBookingDoctor(doc); } };
 
   // 🆕 Cancel appointment via backend
   const cancelAppointment = async (id) => {
@@ -581,7 +582,7 @@ export default function App(){
   const inp={padding:"12px 16px",borderRadius:10,border:`2px solid ${theme.inputBorder}`,fontSize:14,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box",background:theme.inputBg,color:theme.text};
 
   if(authLoading) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",fontSize:20,fontWeight:700,color:"#0F4C81",background:theme.bg}}>🩺 Loading HealthConnect...</div>;
-  if(showAuth) return <AuthPage onSuccess={()=>setShowAuth(false)}/>;
+  if(showAuth) return <AuthPage onSuccess={()=>{ setShowAuth(false); if(pendingDoc){ setBookingDoctor(pendingDoc); setPendingDoc(null); } }}/>;
 
   return(
     <div style={{fontFamily:"'Nunito','Segoe UI',sans-serif",minHeight:"100vh",background:theme.bg,color:theme.text,transition:"background 0.3s,color 0.3s"}}>

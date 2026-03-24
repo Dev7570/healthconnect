@@ -299,7 +299,7 @@ function BookingModal({doctor,hospital,user,onClose,onBooked,initialSlot}){
                     <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                       {["@paytm","@gpay","@ybl","@phonepe"].map(s=><span key={s} onClick={()=>setUpiId(prev=>prev.split("@")[0]+s)} style={{background:"#EDE9FE",color:"#7C3AED",padding:"4px 10px",borderRadius:8,fontSize:11,cursor:"pointer",fontWeight:600}}>{s}</span>)}
                     </div>
-                    
+
                     <div style={{marginTop: 20, textAlign: "center", borderTop: "1px dashed #E9D5FF", paddingTop: 16}}>
                       <div style={{fontSize: 13, fontWeight: 600, color: "#7C3AED", marginBottom: 8}}>Or Scan QR Code to Pay ₹{doctor.fee}</div>
                       <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=devggre@oksbi&pn=HealthConnect&am=${doctor.fee}`)}`} alt="Scan to pay" style={{borderRadius: 12, border: "2px solid #E9D5FF", padding: 8, background: "white", width: 150, height: 150}} />
@@ -1164,7 +1164,7 @@ export default function App(){
         .anim-tipcard:nth-child(7){animation-delay:0.35s}
         .anim-tipcard:nth-child(8){animation-delay:0.40s}
 
-        /* 🏷️ BADGE PULSE */  
+        /* 🏷️ BADGE PULSE */
         .anim-badge-pulse{animation:pulse 2s ease-in-out infinite}
 
         /* 🌀 LOADING SPINNER */

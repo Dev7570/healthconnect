@@ -27,10 +27,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// 🌐 API URL — auto-detect local vs deployed
-const API_URL = window.location.hostname === "localhost"
-  ? "http://localhost:5000"
-  : "https://healthconnect-backend-dev-7570.onrender.com";
+// 🌐 API URL — read from env vars
+const API_URL = process.env.REACT_APP_API_URL || "https://healthconnect-backend-dev-7570.onrender.com";
 
 // 🎨 Color palette for hospitals
 const COLORS = ["#0066CC","#E8432D","#00A651","#6B21A8","#F59E0B","#0F766E","#DC2626","#7C3AED","#059669","#D97706"];

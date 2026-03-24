@@ -2,12 +2,12 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC9R3Q5GoNEmhE0nTimKcwpndCXT6R5n5M",
-  authDomain: "healthconnect-ac27e.firebaseapp.com",
-  projectId: "healthconnect-ac27e",
-  storageBucket: "healthconnect-ac27e.firebasestorage.app",
-  messagingSenderId: "504927241352",
-  appId: "1:504927241352:web:ddef62a1eec08310754b3d"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);

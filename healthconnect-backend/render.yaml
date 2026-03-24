@@ -15,8 +15,6 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 5000
       - key: GOOGLE_PLACES_API_KEY
         sync: false  # Must be set manually in Render dashboard
       - key: MONGODB_URI

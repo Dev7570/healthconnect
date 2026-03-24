@@ -225,6 +225,7 @@ This project utilizes a modern decoupled deployment strategy for maximum perform
 ## 👨‍💻 Credits & Attributes
 
 - **Developer**: Dev Gupta
+- **Co-Founder & Developer**: Aradhya Srivastava
 - **APIs**: Google Places (via RapidAPI)
 - **Auth**: Firebase Authentication by Google
 - **Maps**: OpenStreetMap + React-Leaflet

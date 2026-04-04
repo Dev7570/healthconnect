@@ -1,0 +1,29 @@
+services:
+  # 🖥️ Node.js API Gateway (Backend)
+  - type: web
+    name: healthconnect-backend
+    env: node
+    rootDir: healthconnect-backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+      - key: ML_API_URL
+        fromService:
+          type: web
+          name: healthconnect-ml
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false # User must set this manually in the dashboard
+
+  # 🧠 Python ML API Service
+  - type: web
+    name: healthconnect-ml
+    env: python
+    rootDir: healthconnect-ml
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -b 0.0.0.0:$PORT app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0

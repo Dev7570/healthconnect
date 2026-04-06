@@ -96,7 +96,7 @@ app.get("/hospitals", async (req, res) => {
 
 // ✅ Test route
 app.get("/", (req, res) => {
-  res.json({ message: "HealthConnect Backend is running! 🏥" });
+  res.json({ message: "PulseRATE Backend is running! 🏥" });
 });
 
 // ========================================
@@ -152,7 +152,7 @@ async function seedDoctors() {
           available: i % 2 === 0 ? "Today" : "Tomorrow",
           rating: (Math.random() * 1.5 + 3.5).toFixed(1),
           img: i % 2 === 0 ? "👨‍⚕️" : "👩‍⚕️",
-          email: `${core.name.split(" ")[0].toLowerCase()}.${lName.toLowerCase()}@healthconnect.doc`,
+          email: `${core.name.split(" ")[0].toLowerCase()}.${lName.toLowerCase()}@pulserate.doc`,
           slots: ["9:00 AM", "10:30 AM", "2:00 PM", "4:30 PM"]
         });
       }
@@ -237,7 +237,7 @@ app.post("/appointments", async (req, res) => {
 app.get("/appointments/:email", async (req, res) => {
   try {
     // If it's a doctor email, check doctorEmail field, else patientEmail
-    const isDoc = req.params.email.endsWith("@healthconnect.doc");
+    const isDoc = req.params.email.endsWith("@pulserate.doc");
     const query = isDoc ? { doctorEmail: req.params.email } : { patientEmail: req.params.email };
     
     const appointments = await Appointment.find(query).sort({ bookedAt: -1 });
@@ -400,7 +400,7 @@ app.post("/ml/predict/:disease", async (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`✅ HealthConnect Backend running on http://localhost:${PORT}`);
+  console.log(`✅ PulseRATE Backend running on http://localhost:${PORT}`);
   console.log(`📋 Endpoints available:`);
   console.log(`   GET  /hospitals?city=Delhi`);
   console.log(`   GET  /doctors?hospitalId=1`);

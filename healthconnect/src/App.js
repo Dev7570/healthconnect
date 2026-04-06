@@ -626,7 +626,6 @@ export default function App(){
     setLoadingHistory(false);
   };
 
-  const isAdmin = user?.email === "admin@pulserate.com";
   const isDoctor = user?.email?.endsWith("@pulserate.doc");
 
   // 🛡️ Fetch Admin Stats
